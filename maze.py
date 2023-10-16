@@ -5,7 +5,8 @@ import random
 import time
 import threading
 from kivy.core.window import Window
-
+from kivy.clock import Clock
+from functools import partial
 
 from tile import Tile
 
@@ -14,14 +15,13 @@ class Maze(GridLayout):
         super(Maze, self).__init__(**kwargs)
         self.size_hint = (None, None)
         self.minimum_size = size
-        # self.pos_hint = {'center_x': .5, 'center_y': .5}        
-        self.pos = (0, Window.height - self.size[1])
         self.rows = rows
         self.cols = cols
         self.size = size
+        self.stack = []
+        self.visited = []
         
         self.tiles = [[None for i in range(self.cols)] for j in range(self.rows)]
-        self.visited = []
         
         self.player = None
         self.playerColor = (0,0,1,1)     
@@ -37,7 +37,6 @@ class Maze(GridLayout):
         for i in range(self.rows):
             for j in range(self.cols):
                 tile = Tile(self.size[0] / self.rows, self.size[1] / self.cols)
-                print(self.pos)
                 tile.setPosition(i * self.size[0] / self.rows + self.pos[0], j * self.size[1] / self.cols + self.pos[1])
                 self.tiles[i][j] = tile
                 self.add_widget(tile)
@@ -46,7 +45,7 @@ class Maze(GridLayout):
         self.renderPlayer()
         
     
-    def renderPlayer(self):
+    def renderPlayer(self, instance = None):
         if self.player is not None:
             self.canvas.remove(self.player)
         
@@ -79,68 +78,85 @@ class Maze(GridLayout):
                 self.tiles[i][j].setBorders(1, True)
             
     def generateMaze(self, instance = None):
-        print(self.pos)
-
+        print("Generating Maze")
         self.__clearMaze()
-        self.visited = [[False for i in range(self.cols)] for j in range(self.rows)]
+        
+        # Randomize starting point of maze generation
         
         i = random.randint(0, self.rows - 1)
         j = random.randint(0, self.cols - 1)
+        self.visited = [[False for i in range(self.cols)] for j in range(self.rows)]
+        self.stack = [[i, j]]
         
-        self.__generateMaze(i, j)
-    
-    def __generateMaze(self, i, j):
+        print(i,j)
+
+        self._generateMazeStep()
         
-        while True:
-            
-            # Mark the current cell as visited
-            self.visited[i][j] = True
-            self.tiles[i][j].setColor(self.tileColor)
-            self.tiles[i][j].setBorderColor(self.borderColor)
-            
-            # Update player position on screen
-            self.currentPos = (i,j)
-            self.renderPlayer()
-            
-            # Get the unvisited neighbours of the current cell
-            neighbours_unvisited = self.neighbours_unvisited(i, j)
-            
-            if len(neighbours_unvisited) == 0:
-                return
-            
-            neighbour = random.choice(neighbours_unvisited)
-            
-            # Remove the wall between the current cell and the chosen cell
-            nbrI = neighbour[0]
-            nbrJ = neighbour[1]
+    def _generateMazeStep(self, instance = None):
+        
+        if len(self.stack) == 0:
+            return
+        
+        i, j = self.stack[-1]
+        
+        # Mark the current cell as visited
+        self.visited[i][j] = True
 
-            self.__remove_wall(i, j, nbrI, nbrJ)
-            
-            self.__generateMaze(nbrI, nbrJ)
+        self.tiles[i][j].setColor(self.tileColor)
+        self.tiles[i][j].setBorderColor(self.borderColor)
+        
+        # Update player position on screen
+        self.currentPos = (i,j)
+        self.renderPlayer()
+        
+        # Get the unvisited neighbours of the current cell
+        neighbours_unvisited = self.__neighbours_unvisited(i, j)
+        
+        if len(neighbours_unvisited) == 0:
+            self.stack.pop()
+            Clock.schedule_once(self._generateMazeStep, 1)
+            return
+        
+        neighbour = random.choice(neighbours_unvisited)
+        
+        # Remove the wall between the current cell and the chosen cell
+        nbrI = neighbour[0]
+        nbrJ = neighbour[1]
 
-    def __remove_wall(self, i, j, nbrI, nbrJ):
-                
-        nbr2I = nbrI
-        nbr2J = nbrJ
+        self.__remove_wall(self.stack[-1], neighbour)
+        
+        self.stack.append([nbrI, nbrJ])
+        Clock.schedule_once(self._generateMazeStep, 1)  # Adjust the delay as needed
+        
+        # self.__generateMaze(nbrI, nbrJ)
 
-        if nbrI == i:
-            wall = 1
-            nbr2I = i
-            if nbrJ == j + 1:
-                nbr2J = j
+    def __remove_wall(self, currentCell, neighbour):
+        
+        # Same row 
+        if currentCell[0] == neighbour[0]:
+            wall = 1 # Right or Left Wall to be removed
+            i = currentCell[0] = neighbour[0]
+            if currentCell[1] > neighbour[1]:
+                # Left Wall which is -> Right Wall of Neighbour to be removed
+                j = neighbour[1]
+            else:
+                # Right Wall of currentCell to be removed
+                j = currentCell[1]
+        # Same Column
         else:
-            wall = 0
-            nbr2J = j
-            if nbrI == i - 1:
-                nbr2I = i
-        
+            wall = 0 # Top or Bottom Wall to be removed
+            j = currentCell[1] = neighbour[1]
+            if currentCell[0] < neighbour[0]:
+                # Bottom Wall which is -> Top Wall of Neighbour to be removed
+                i = neighbour[0]
+            else:
+                # Top Wall of CurrentCell to be removed
+                i = currentCell[0]
+                
         self.tiles[i][j].setBorders(wall, False)
-        
-        self.tiles[nbr2I][nbr2J].setBorders(wall, False)
-        
-        # time.sleep(2)        
-    
-    def neighbours_unvisited(self, i, j):
+                
+            
+    def __neighbours_unvisited(self, i, j):
         
         neighbors = []
 

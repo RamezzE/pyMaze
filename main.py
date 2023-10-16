@@ -3,20 +3,16 @@ from kivy.uix.boxlayout import BoxLayout
 from kivy.core.window import Window
 from kivy.uix.button import Button
 from kivy.clock import Clock
+import threading
 
 from maze import Maze
 
 class MazeApp(App):
     def build(self):
         layout = BoxLayout(orientation='vertical')
-        maze = Maze(5, 5, (600,600))
+        self.maze = Maze(4, 4, (600,600))
         # maze.setPosition((20,20))
-        # Clock.schedule_interval(maze.generateMaze, 1)
-        maze.generateMaze()
-        maze.generateMaze()
-        
-        # maze.render()
-        layout.add_widget(maze)
+        layout.add_widget(self.maze)
         
         # Create a button
         button = Button(text="Click Me")
@@ -24,10 +20,9 @@ class MazeApp(App):
         # button.size = (20,20)
 
         # Bind the button's on_release event to the function
-        button.bind(on_press=maze.generateMaze)
+        button.bind(on_press=self.maze.generateMaze)
 
         layout.add_widget(button)
-        
         return layout
 
 if __name__ == '__main__':

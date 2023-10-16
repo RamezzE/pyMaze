@@ -25,26 +25,11 @@ class Tile(Widget):
             self.renderBorders()
 
     def renderBorders(self):
-        # right Border
-        if self.rightBorder is not None:
-            self.canvas.remove(self.rightBorder)
-            
-        if self.borders[0] == True:
-            with self.canvas:
-                Color(*self.borderColor)
-                Line(
-                    points=[
-                        self.pos[0] + self.size[0], self.pos[1],
-                        self.pos[0] + self.size[0], self.pos[1] + self.size[1]
-                    ],
-                    width=self.borderWidth,
-                )
-
         # top border
         if self.topBorder is not None:
             self.canvas.remove(self.topBorder)
             
-        if self.borders[1] == True:
+        if self.borders[0] == True:
             with self.canvas:
                 Color(*self.borderColor)
                 Line(
@@ -55,6 +40,22 @@ class Tile(Widget):
                     width=self.borderWidth,
                 )
 
+        # right Border
+        if self.rightBorder is not None:
+            self.canvas.remove(self.rightBorder)
+            
+        if self.borders[1] == True:
+            with self.canvas:
+                Color(*self.borderColor)
+                Line(
+                    points=[
+                        self.pos[0] + self.size[0], self.pos[1],
+                        self.pos[0] + self.size[0], self.pos[1] + self.size[1]
+                    ],
+                    width=self.borderWidth,
+                )
+
+        
     def setPosition(self, x, y):
         self.pos = (x, y)
         self.render()
