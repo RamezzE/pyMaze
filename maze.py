@@ -1,25 +1,27 @@
-from kivy.uix.widget import Widget
-from kivy.uix.boxlayout import BoxLayout
+from kivy.uix.gridlayout import GridLayout
 from kivy.graphics import Rectangle
 from kivy.graphics.context_instructions import Color
 import random
 import time
 import threading
+from kivy.core.window import Window
 
 
 from tile import Tile
 
-class Maze(BoxLayout):
+class Maze(GridLayout):
     def __init__(self, rows, cols, size, **kwargs):
         super(Maze, self).__init__(**kwargs)
-        self.orientation = 'horizontal'
+        self.size_hint = (None, None)
+        self.minimum_size = size
+        # self.pos_hint = {'center_x': .5, 'center_y': .5}        
+        self.pos = (0, Window.height - self.size[1])
         self.rows = rows
         self.cols = cols
         self.size = size
-        self.pos = (0, 0)
         
         self.tiles = [[None for i in range(self.cols)] for j in range(self.rows)]
-        self.visited = [[False for i in range(self.cols)] for j in range(self.rows)]
+        self.visited = []
         
         self.player = None
         self.playerColor = (0,0,1,1)     
@@ -35,19 +37,12 @@ class Maze(BoxLayout):
         for i in range(self.rows):
             for j in range(self.cols):
                 tile = Tile(self.size[0] / self.rows, self.size[1] / self.cols)
+                print(self.pos)
                 tile.setPosition(i * self.size[0] / self.rows + self.pos[0], j * self.size[1] / self.cols + self.pos[1])
                 self.tiles[i][j] = tile
                 self.add_widget(tile)
-        
-        self.render()
-        
-    def render(self):
-        # self.canvas.clear()
-        for i in range(self.rows):
-            for j in range(self.cols):
-                self.tiles[i][j].setPosition(i * self.size[0] / self.rows + self.pos[0], j * self.size[1] / self.cols + self.pos[1])
-                # self.remove_widget(self.tiles[i][j])
-        
+
+        self.__clearMaze()        
         self.renderPlayer()
         
     
@@ -69,11 +64,11 @@ class Maze(BoxLayout):
             
     def setPosition(self, pos):
         self.pos = pos
-        self.render()
+        self.renderPlayer()
     
     def resize(self, size):
         self.size = size
-        self.render()
+        # self.render()
                 
     def __clearMaze(self):
         for i in range(self.rows):
@@ -82,11 +77,12 @@ class Maze(BoxLayout):
                 self.tiles[i][j].borderColor = self.defaultBorderColor
                 self.tiles[i][j].setBorders(0, True)
                 self.tiles[i][j].setBorders(1, True)
-        
-        self.render()
-    
-    def generateMaze(self):
+            
+    def generateMaze(self, instance = None):
+        print(self.pos)
+
         self.__clearMaze()
+        self.visited = [[False for i in range(self.cols)] for j in range(self.rows)]
         
         i = random.randint(0, self.rows - 1)
         j = random.randint(0, self.cols - 1)
@@ -104,7 +100,7 @@ class Maze(BoxLayout):
             
             # Update player position on screen
             self.currentPos = (i,j)
-            self.render()
+            self.renderPlayer()
             
             # Get the unvisited neighbours of the current cell
             neighbours_unvisited = self.neighbours_unvisited(i, j)
@@ -113,9 +109,6 @@ class Maze(BoxLayout):
                 return
             
             neighbour = random.choice(neighbours_unvisited)
-            
-            print(neighbours_unvisited)
-            print(neighbour)
             
             # Remove the wall between the current cell and the chosen cell
             nbrI = neighbour[0]
