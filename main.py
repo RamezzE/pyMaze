@@ -9,7 +9,7 @@ from maze import Maze
 class MazeApp(App):
     def build(self):
         layout = BoxLayout(orientation='vertical')
-        self.maze = Maze(10, 10, (600,600))
+        self.maze = Maze(6, 6, (600,600))
         # maze.setPosition((20,20))
         layout.add_widget(self.maze)
         

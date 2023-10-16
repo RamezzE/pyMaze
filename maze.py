@@ -32,14 +32,7 @@ class Maze(GridLayout):
         self.borderColor = (0.8,0.8,0.8,1)
         self.correctPathColor = (205/255, 84/255, 29/255,1)
         self.visitedColor = (56/255, 104/255, 88/255,1)
-        
-        
-        self.stack = []
-        self.deque = deque()
-        self.visited =[[False for i in range(self.cols)] for j in range(self.rows)]
-        self.goal = [self.rows - 1, self.cols - 1]
-        self.parent_BFS = [[None for i in range(self.cols)] for j in range(self.rows)]
-        
+                
         for i in range(self.rows):
             for j in range(self.cols):
                 tile = Tile(self.size[0] / self.rows, self.size[1] / self.cols)
@@ -48,10 +41,9 @@ class Maze(GridLayout):
                 self.add_widget(tile)
 
         self.__clearMaze()        
-        self.renderPlayer()
-        
+        self.__renderPlayer()
     
-    def renderPlayer(self, instance = None):
+    def __renderPlayer(self, instance = None):
         if self.player is not None:
             self.canvas.remove(self.player)
         
@@ -69,22 +61,18 @@ class Maze(GridLayout):
             
     def setPosition(self, pos):
         self.pos = pos
-        self.renderPlayer()
+        self.__renderPlayer()
     
     def resize(self, size):
         self.size = size
         # self.render()
         
-    def resetColors(self):
+    def __resetColors(self):
         for i in range(self.rows):
             for j in range(self.cols):
                 self.tiles[i][j].setColor(self.tileColor)
-                
-                
-    def __clearMaze(self):
-        self.visited = [[False for i in range(self.cols)] for j in range(self.rows)]
-        self.stack = [[0,0]]
-        
+                          
+    def __clearMaze(self):        
         for i in range(self.rows):
             for j in range(self.cols):
                 self.tiles[i][j].color = self.defaultColor
@@ -103,11 +91,9 @@ class Maze(GridLayout):
         visited = [[False for i in range(self.cols)] for j in range(self.rows)]
         stack = [[i, j]]
         
-        print(i,j)
-
-        self._generateMazeStep(stack, visited)
+        self.__generateMazeStep(stack, visited)
         
-    def _generateMazeStep(self, stack, visited, instance = None):
+    def __generateMazeStep(self, stack, visited, instance = None):
         
         if len(stack) == 0:
             return
@@ -122,14 +108,14 @@ class Maze(GridLayout):
         
         # Update player position on screen
         self.currentPos = (i,j)
-        self.renderPlayer()
+        self.__renderPlayer()
         
         # Get the unvisited neighbours of the current cell
         neighbours_unvisited = self.__neighbours_unvisited(i, j, visited)
         
         if len(neighbours_unvisited) == 0:
             stack.pop()
-            Clock.schedule_once(partial(self._generateMazeStep, stack, visited), 0.1)
+            Clock.schedule_once(partial(self.__generateMazeStep, stack, visited), 0.1)
             return
         
         neighbour = random.choice(neighbours_unvisited)
@@ -141,7 +127,7 @@ class Maze(GridLayout):
         self.__remove_wall(stack[-1], neighbour)
         
         stack.append([nbrI, nbrJ])
-        Clock.schedule_once(partial(self._generateMazeStep, stack, visited), 0.1)
+        Clock.schedule_once(partial(self.__generateMazeStep, stack, visited), 0.1)
         
     def __remove_wall(self, currentCell, neighbour):
         
@@ -221,88 +207,86 @@ class Maze(GridLayout):
         
         # Get the starting point & Goal
         start = [0,0]
+        stack = []
+        stack.append(start)
+        visited = [[False for i in range(self.cols)] for j in range(self.rows)]
         goal = [self.rows - 1, self.cols - 1]
-
-        self.stack = []
-        self.stack.append(start)
-        self.visited =[[False for i in range(self.cols)] for j in range(self.rows)]
-        self.goal = [self.rows - 1, self.cols - 1]
         
-        self.resetColors()
+        self.__resetColors()
 
-        self.solve_DFS_Step()
+        self.__solve_DFS_Step(stack, visited, goal)
         
-    def solve_DFS_Step(self, instance = None):
+    def __solve_DFS_Step(self, stack, visited, goal, instance = None):
             
-        if len(self.stack) == 0:
+        if len(stack) == 0:
             print("No Solution")
             return
         
-        i,j = self.stack[-1]
-        self.visited[i][j] = True
+        i,j = stack[-1]
+        visited[i][j] = True
         self.tiles[i][j].setColor(self.visitedColor)
         
-        self.currentPos = self.stack[-1]
-        self.renderPlayer()
+        self.currentPos = stack[-1]
+        self.__renderPlayer()
         
-        if self.stack[-1] == self.goal:
+        if stack[-1] == goal:
             print("Goal Reached")
-            self.backTrackPath(self.stack)
+            self.__backTrackPath_DFS(stack)
             return
         
         # Check the left cell
-        if j - 1 >= 0 and not self.visited[i][j - 1]:
+        if j - 1 >= 0 and not visited[i][j - 1]:
             # Left Wall Check
             if not self.tiles[i][j-1].borders[1]:
                 # We can go left
                 print ("Left")
-                self.stack.append([i, j - 1])
-                Clock.schedule_once(self.solve_DFS_Step, 0.1)
+                stack.append([i, j - 1])
+                Clock.schedule_once(partial(self.__solve_DFS_Step,stack, visited, goal), 0.1)
                 return
             
         # Check the top cell
-        if i - 1 >= 0 and not self.visited[i - 1][j]:
+        if i - 1 >= 0 and not visited[i - 1][j]:
             # Top Wall Check
             if not self.tiles[i][j].borders[0]:
                 # We can go top
                 print ("Top")
-                self.stack.append([i - 1, j])
-                Clock.schedule_once(self.solve_DFS_Step, 0.1)
+                stack.append([i - 1, j])
+                Clock.schedule_once(partial(self.__solve_DFS_Step,stack,visited, goal), 0.1)
                 return
             
             
         # Check the right cell
-        if j + 1 < self.cols and not self.visited[i][j + 1]:
+        if j + 1 < self.cols and not visited[i][j + 1]:
             # Right Wall Check
             if not self.tiles[i][j].borders[1]:
                 # We can go right
                 print ("Right")
-                self.stack.append([i, j + 1])
-                Clock.schedule_once(self.solve_DFS_Step, 0.1)
+                stack.append([i, j + 1])
+                Clock.schedule_once(partial(self.__solve_DFS_Step,stack,visited, goal), 0.1)
                 return
 
         
         # Check the bottom cell
-        if i + 1 < self.rows and not self.visited[i + 1][j]:
+        if i + 1 < self.rows and not visited[i + 1][j]:
             # Bottom Wall Check
             if not self.tiles[i+1][j].borders[0]:
                 # We can go bottom
                 print ("Bottom")
-                self.stack.append([i + 1, j])
-                Clock.schedule_once(self.solve_DFS_Step, 0.1)
+                stack.append([i + 1, j])
+                Clock.schedule_once(partial(self.__solve_DFS_Step,stack,visited, goal), 0.1)
                 return
             
         print("BackTracking")
-        self.stack.pop()        
-        Clock.schedule_once(self.solve_DFS_Step, 0.1)
+        stack.pop()        
+        Clock.schedule_once(partial(self.__solve_DFS_Step,stack, visited, goal), 0.1)
 
-    def backTrackPath(self, stack, instance = None):
+    def __backTrackPath_DFS(self, stack, instance = None):
         if len(stack) == 0:
             return
         i,j = stack[-1]
         self.tiles[i][j].setColor(self.correctPathColor)
         stack.pop()
-        Clock.schedule_once(partial(self.backTrackPath, stack), 0.1)
+        Clock.schedule_once(partial(self.__backTrackPath_DFS, stack), 0.1)
         
     def solve_BFS(self, instance = None):
         print("Solving Maze with BFS")
@@ -311,52 +295,54 @@ class Maze(GridLayout):
         start = [0,0]
         goal = [self.rows - 1, self.cols - 1]
 
-        self.deque.clear()
-        self.deque.append(start)
-        self.visited =[[False for i in range(self.cols)] for j in range(self.rows)]
-        self.goal = [self.rows - 1, self.cols - 1]
-        self.parent_BFS = [[None for i in range(self.cols)] for j in range(self.rows)]
+        deque_BFS = deque()
+        deque_BFS.append(start)
         
-        self.resetColors()
+        visited =[[False for i in range(self.cols)] for j in range(self.rows)]
+        parent = [[None for i in range(self.cols)] for j in range(self.rows)]
         
-        self.solve_BFS_Step()
+        self.__resetColors()
+
+        self.__solve_BFS_Step(deque_BFS, visited, goal, parent)
         
-    def solve_BFS_Step(self, instance = None):
+    def __solve_BFS_Step(self, deque, visited, goal, parent, instance = None):
                         
-        if len(self.deque) == 0:
+        if len(deque) == 0:
             print("No Solution")
             return
         
-        i,j = self.deque[0]
-        self.deque.popleft()
-        self.visited[i][j] = True
+        i,j = deque[0]
+        deque.popleft()
+        visited[i][j] = True
         self.tiles[i][j].setColor(self.visitedColor)
         
         self.currentPos = [i,j]
-        self.renderPlayer()
+        self.__renderPlayer()
         
-        if i == self.goal[0] and j == self.goal[1]:
+        if [i,j] == goal:
             print("Reached Goal")
-            self.backTrackPath_BFS(i,j)
+            self.__backTrackPath_BFS(goal, parent)
             return
         
-        neighbours = self.__neighbours_unvisited_BFS(i, j, self.visited)
+        neighbours = self.__neighbours_unvisited_BFS(i, j, visited)
         
         for neighbour in neighbours:
-            self.deque.append(neighbour)
-            self.parent_BFS[neighbour[0]][neighbour[1]] = [i,j]
+            deque.append(neighbour)
+            parent[neighbour[0]][neighbour[1]] = [i,j]
             
-        Clock.schedule_once(self.solve_BFS_Step, 0.1)
+        Clock.schedule_once(partial(self.__solve_BFS_Step,deque, visited, goal, parent), 0.1)
             
-    def backTrackPath_BFS(self, i, j, instance = None):
-        if self.parent_BFS[i][j] is None:
+    def __backTrackPath_BFS(self, goal, parent, instance = None):
+        i,j = goal
+        
+        if parent[i][j] is None:
             return
         
         self.tiles[i][j].setColor(self.correctPathColor)
-        parentI, parentJ = self.parent_BFS[i][j]
+        parentI, parentJ = parent[i][j]
         self.tiles[parentI][parentJ].setColor(self.correctPathColor)
         
-        Clock.schedule_once(partial(self.backTrackPath_BFS, parentI, parentJ), 0.1)
+        Clock.schedule_once(partial(self.__backTrackPath_BFS, [parentI, parentJ], parent), 0.1)
         
         
         
