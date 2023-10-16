@@ -12,7 +12,7 @@ class Tile(Widget):
         self.borders = [True, True]
         self.borderColor = (0, 0, 0, 1)
         self.rightBorder = self.topBorder = None
-        self.borderWidth = 0.5
+        self.borderWidth = 1
 
         self.render()
 

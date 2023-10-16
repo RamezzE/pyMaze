@@ -19,15 +19,18 @@ class Maze(GridLayout):
         self.tiles = [[None for i in range(self.cols)] for j in range(self.rows)]
         
         self.player = None
-        self.playerColor = (0,0,1,1)     
+        self.playerColor = (116/255, 133/255, 101/255,1)     
         
         self.currentPos = (2,2)
         
         self.defaultColor = (1,1,1,1)
         self.defaultBorderColor = (0,0,0,1)
         
-        self.tileColor = (1,0,1,1)
-        self.borderColor = (0,0,0.5,1)
+        self.tileColor = (26/255, 58/255, 69/255,1)
+        self.borderColor = (0.8,0.8,0.8,1)
+        self.correctPathColor = (205/255, 84/255, 29/255,1)
+        self.visitedColor = (56/255, 104/255, 88/255,1)
+        
         
         self.stack = []
         self.stack.append([0,0])
@@ -68,6 +71,12 @@ class Maze(GridLayout):
     def resize(self, size):
         self.size = size
         # self.render()
+        
+    def resetColors(self):
+        for i in range(self.rows):
+            for j in range(self.cols):
+                self.tiles[i][j].setColor(self.tileColor)
+                
                 
     def __clearMaze(self):
         self.visited = [[False for i in range(self.cols)] for j in range(self.rows)]
@@ -186,14 +195,16 @@ class Maze(GridLayout):
         start = [0,0]
         goal = [self.rows - 1, self.cols - 1]
 
-        # self.stack = [0,0]
+        self.stack = []
+        self.stack.append(start)
         self.visited =[[False for i in range(self.cols)] for j in range(self.rows)]
         self.goal = [self.rows - 1, self.cols - 1]
-
-        print("Test1")
-        self.solve_DFS_Step(None)
         
-    def solve_DFS_Step(self, instance):
+        self.resetColors()
+
+        self.solve_DFS_Step()
+        
+    def solve_DFS_Step(self, instance = None):
         
         print("Stack: ", self.stack)
         
@@ -203,12 +214,14 @@ class Maze(GridLayout):
         
         i,j = self.stack[-1]
         self.visited[i][j] = True
+        self.tiles[i][j].setColor(self.visitedColor)
         
         self.currentPos = self.stack[-1]
         self.renderPlayer()
         
         if self.stack[-1] == self.goal:
             print("Goal Reached")
+            self.backTrackPath(self.stack)
             return
         
         # Check the left cell
@@ -254,11 +267,17 @@ class Maze(GridLayout):
                 return
             
         print("BackTracking")
-        # self.visited[i][j] = False
         self.stack.pop()        
         Clock.schedule_once(self.solve_DFS_Step, 0.1)
 
-            
+    def backTrackPath(self, stack, instance = None):
+        if len(stack) == 0:
+            return
+        i,j = stack[-1]
+        self.tiles[i][j].setColor(self.correctPathColor)
+        stack.pop()
+        Clock.schedule_once(partial(self.backTrackPath, stack), 0.1)
+        
 
         
 
