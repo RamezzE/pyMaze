@@ -4,6 +4,8 @@ from kivy.graphics.context_instructions import Color
 import random
 from kivy.clock import Clock
 from functools import partial
+from collections import deque
+
 
 from tile import Tile
 
@@ -33,7 +35,7 @@ class Maze(GridLayout):
         
         
         self.stack = []
-        self.stack.append([0,0])
+        self.deque = deque()
         self.visited =[[False for i in range(self.cols)] for j in range(self.rows)]
         self.goal = [self.rows - 1, self.cols - 1]
         
@@ -188,8 +190,33 @@ class Maze(GridLayout):
 
         return neighbors
     
+    def __neighbours_unvisited_BFS(self, i, j, visited):
+        neighbors = []
+
+        # Check the left neighbor
+        if j - 1 >= 0 and not visited[i][j - 1]:
+            if not self.tiles[i][j-1].borders[1]:
+                neighbors.append([i, j - 1])
+            
+        # Check the top neighbor
+        if i - 1 >= 0 and not visited[i - 1][j]:
+            if not self.tiles[i][j].borders[0]:
+                neighbors.append([i - 1, j])
+            
+        # Check the right neighbor
+        if j + 1 < self.cols and not visited[i][j + 1]:
+            if not self.tiles[i][j].borders[1]:
+                neighbors.append([i, j + 1])
+            
+        # Check the bottom neighbor
+        if i + 1 < self.rows and not visited[i + 1][j]:
+            if not self.tiles[i+1][j].borders[0]:
+                neighbors.append([i + 1, j])
+
+        return neighbors
+    
     def solve_DFS(self, instance = None):
-        print("Solving Maze")
+        print("Solving Maze with DFS")
         
         # Get the starting point & Goal
         start = [0,0]
@@ -205,9 +232,7 @@ class Maze(GridLayout):
         self.solve_DFS_Step()
         
     def solve_DFS_Step(self, instance = None):
-        
-        print("Stack: ", self.stack)
-        
+            
         if len(self.stack) == 0:
             print("No Solution")
             return
@@ -278,7 +303,52 @@ class Maze(GridLayout):
         stack.pop()
         Clock.schedule_once(partial(self.backTrackPath, stack), 0.1)
         
+    def solve_BFS(self, instance = None):
+        print("Solving Maze with BFS")
+        
+        # Get the starting point & Goal
+        start = [0,0]
+        goal = [self.rows - 1, self.cols - 1]
 
+        self.deque.clear()
+        self.deque.append(start)
+        self.visited =[[False for i in range(self.cols)] for j in range(self.rows)]
+        self.goal = [self.rows - 1, self.cols - 1]
+        
+        self.resetColors()
+        
+        self.solve_BFS_Step()
+        
+    def solve_BFS_Step(self, instance = None):
+                        
+        if len(self.deque) == 0:
+            print("No Solution")
+            return
+        
+        i,j = self.deque[0]
+        self.deque.popleft()
+        self.visited[i][j] = True
+        self.tiles[i][j].setColor(self.visitedColor)
+        
+        self.currentPos = [i,j]
+        self.renderPlayer()
+        
+        if i == self.goal[0] and j == self.goal[1]:
+            print("Reached Goal")
+            return
+        
+        neighbours = self.__neighbours_unvisited_BFS(i, j, self.visited)
+        
+        for neighbour in neighbours:
+            self.deque.append(neighbour)
+            
+        Clock.schedule_once(self.solve_BFS_Step, 0.1)
+            
+        
+        
+        
+        
+        
         
 
         

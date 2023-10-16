@@ -15,12 +15,15 @@ class MazeApp(App):
         
         button_generateMaze = Button(text="Generate Maze")
         button_solveDFS = Button(text="Solve with DFS")
+        button_solveBFS = Button(text="Solve with BFS")
         
         button_generateMaze.bind(on_press=self.maze.generateMaze)
         button_solveDFS.bind(on_press=self.maze.solve_DFS)
+        button_solveBFS.bind(on_press=self.maze.solve_BFS)
 
         layout.add_widget(button_generateMaze)
         layout.add_widget(button_solveDFS)
+        layout.add_widget(button_solveBFS)
         return layout
 
 if __name__ == '__main__':
