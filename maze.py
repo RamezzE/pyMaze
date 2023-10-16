@@ -38,6 +38,7 @@ class Maze(GridLayout):
         self.deque = deque()
         self.visited =[[False for i in range(self.cols)] for j in range(self.rows)]
         self.goal = [self.rows - 1, self.cols - 1]
+        self.parent_BFS = [[None for i in range(self.cols)] for j in range(self.rows)]
         
         for i in range(self.rows):
             for j in range(self.cols):
@@ -314,6 +315,7 @@ class Maze(GridLayout):
         self.deque.append(start)
         self.visited =[[False for i in range(self.cols)] for j in range(self.rows)]
         self.goal = [self.rows - 1, self.cols - 1]
+        self.parent_BFS = [[None for i in range(self.cols)] for j in range(self.rows)]
         
         self.resetColors()
         
@@ -335,15 +337,27 @@ class Maze(GridLayout):
         
         if i == self.goal[0] and j == self.goal[1]:
             print("Reached Goal")
+            self.backTrackPath_BFS(i,j)
             return
         
         neighbours = self.__neighbours_unvisited_BFS(i, j, self.visited)
         
         for neighbour in neighbours:
             self.deque.append(neighbour)
+            self.parent_BFS[neighbour[0]][neighbour[1]] = [i,j]
             
         Clock.schedule_once(self.solve_BFS_Step, 0.1)
             
+    def backTrackPath_BFS(self, i, j, instance = None):
+        if self.parent_BFS[i][j] is None:
+            return
+        
+        self.tiles[i][j].setColor(self.correctPathColor)
+        parentI, parentJ = self.parent_BFS[i][j]
+        self.tiles[parentI][parentJ].setColor(self.correctPathColor)
+        
+        Clock.schedule_once(partial(self.backTrackPath_BFS, parentI, parentJ), 0.1)
+        
         
         
         
