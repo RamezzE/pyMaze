@@ -1,14 +1,15 @@
-import kivy
 from kivy.app import App
-from kivy.uix.button import Button
+from kivy.uix.boxlayout import BoxLayout
+from kivy.core.window import Window
 
+from maze import Maze
 
-class TestApp(App):
-
+class MazeApp(App):
     def build(self):
-        # return a Button() as a root widget
-        return Button(text='hello world')
-
+        layout = BoxLayout(orientation='vertical')
+        maze = Maze(10, 10, (Window.width/1.5, Window.width/1.5 ))
+        layout.add_widget(maze)
+        return layout
 
 if __name__ == '__main__':
-    TestApp().run()
+    MazeApp().run()
