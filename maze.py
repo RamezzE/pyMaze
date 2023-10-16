@@ -2,9 +2,6 @@ from kivy.uix.gridlayout import GridLayout
 from kivy.graphics import Rectangle
 from kivy.graphics.context_instructions import Color
 import random
-import time
-import threading
-from kivy.core.window import Window
 from kivy.clock import Clock
 from functools import partial
 
@@ -18,8 +15,6 @@ class Maze(GridLayout):
         self.rows = rows
         self.cols = cols
         self.size = size
-        self.stack = []
-        self.visited = []
         
         self.tiles = [[None for i in range(self.cols)] for j in range(self.rows)]
         
@@ -31,8 +26,13 @@ class Maze(GridLayout):
         self.defaultColor = (1,1,1,1)
         self.defaultBorderColor = (0,0,0,1)
         
-        self.tileColor = (0.5,0.5,0.5,1)
-        self.borderColor = (1,1,0,1)
+        self.tileColor = (1,0,1,1)
+        self.borderColor = (0,0,0.5,1)
+        
+        self.stack = []
+        self.stack.append([0,0])
+        self.visited =[[False for i in range(self.cols)] for j in range(self.rows)]
+        self.goal = [self.rows - 1, self.cols - 1]
         
         for i in range(self.rows):
             for j in range(self.cols):
@@ -70,6 +70,9 @@ class Maze(GridLayout):
         # self.render()
                 
     def __clearMaze(self):
+        self.visited = [[False for i in range(self.cols)] for j in range(self.rows)]
+        self.stack = [[0,0]]
+        
         for i in range(self.rows):
             for j in range(self.cols):
                 self.tiles[i][j].color = self.defaultColor
@@ -85,22 +88,22 @@ class Maze(GridLayout):
         
         i = random.randint(0, self.rows - 1)
         j = random.randint(0, self.cols - 1)
-        self.visited = [[False for i in range(self.cols)] for j in range(self.rows)]
-        self.stack = [[i, j]]
+        visited = [[False for i in range(self.cols)] for j in range(self.rows)]
+        stack = [[i, j]]
         
         print(i,j)
 
-        self._generateMazeStep()
+        self._generateMazeStep(stack, visited)
         
-    def _generateMazeStep(self, instance = None):
+    def _generateMazeStep(self, stack, visited, instance = None):
         
-        if len(self.stack) == 0:
+        if len(stack) == 0:
             return
         
-        i, j = self.stack[-1]
+        i, j = stack[-1]
         
         # Mark the current cell as visited
-        self.visited[i][j] = True
+        visited[i][j] = True
 
         self.tiles[i][j].setColor(self.tileColor)
         self.tiles[i][j].setBorderColor(self.borderColor)
@@ -110,11 +113,11 @@ class Maze(GridLayout):
         self.renderPlayer()
         
         # Get the unvisited neighbours of the current cell
-        neighbours_unvisited = self.__neighbours_unvisited(i, j)
+        neighbours_unvisited = self.__neighbours_unvisited(i, j, visited)
         
         if len(neighbours_unvisited) == 0:
-            self.stack.pop()
-            Clock.schedule_once(self._generateMazeStep, 1)
+            stack.pop()
+            Clock.schedule_once(partial(self._generateMazeStep, stack, visited), 0.1)
             return
         
         neighbour = random.choice(neighbours_unvisited)
@@ -123,13 +126,11 @@ class Maze(GridLayout):
         nbrI = neighbour[0]
         nbrJ = neighbour[1]
 
-        self.__remove_wall(self.stack[-1], neighbour)
+        self.__remove_wall(stack[-1], neighbour)
         
-        self.stack.append([nbrI, nbrJ])
-        Clock.schedule_once(self._generateMazeStep, 1)  # Adjust the delay as needed
+        stack.append([nbrI, nbrJ])
+        Clock.schedule_once(partial(self._generateMazeStep, stack, visited), 0.1)
         
-        # self.__generateMaze(nbrI, nbrJ)
-
     def __remove_wall(self, currentCell, neighbour):
         
         # Same row 
@@ -142,6 +143,7 @@ class Maze(GridLayout):
             else:
                 # Right Wall of currentCell to be removed
                 j = currentCell[1]
+                
         # Same Column
         else:
             wall = 0 # Top or Bottom Wall to be removed
@@ -154,30 +156,114 @@ class Maze(GridLayout):
                 i = currentCell[0]
                 
         self.tiles[i][j].setBorders(wall, False)
-                
-            
-    def __neighbours_unvisited(self, i, j):
+                  
+    def __neighbours_unvisited(self, i, j, visited):
         
         neighbors = []
 
         # Check the bottom neighbor
-        if i + 1 < self.rows and not self.visited[i + 1][j]:
+        if i + 1 < self.rows and not visited[i + 1][j]:
             neighbors.append([i + 1, j])
 
         # Check the top neighbor
-        if i - 1 >= 0 and not self.visited[i - 1][j]:
+        if i - 1 >= 0 and not visited[i - 1][j]:
             neighbors.append([i - 1, j])
 
         # Check the right neighbor
-        if j + 1 < self.cols and not self.visited[i][j + 1]:
+        if j + 1 < self.cols and not visited[i][j + 1]:
             neighbors.append([i, j + 1])
 
         # Check the left neighbor
-        if j - 1 >= 0 and not self.visited[i][j - 1]:
+        if j - 1 >= 0 and not visited[i][j - 1]:
             neighbors.append([i, j - 1])
 
         return neighbors
     
+    def solve_DFS(self, instance = None):
+        print("Solving Maze")
+        
+        # Get the starting point & Goal
+        start = [0,0]
+        goal = [self.rows - 1, self.cols - 1]
+
+        # self.stack = [0,0]
+        self.visited =[[False for i in range(self.cols)] for j in range(self.rows)]
+        self.goal = [self.rows - 1, self.cols - 1]
+
+        print("Test1")
+        self.solve_DFS_Step(None)
+        
+    def solve_DFS_Step(self, instance):
+        
+        print("Stack: ", self.stack)
+        
+        if len(self.stack) == 0:
+            print("No Solution")
+            return
+        
+        i,j = self.stack[-1]
+        self.visited[i][j] = True
+        
+        self.currentPos = self.stack[-1]
+        self.renderPlayer()
+        
+        if self.stack[-1] == self.goal:
+            print("Goal Reached")
+            return
+        
+        # Check the left cell
+        if j - 1 >= 0 and not self.visited[i][j - 1]:
+            # Left Wall Check
+            if not self.tiles[i][j-1].borders[1]:
+                # We can go left
+                print ("Left")
+                self.stack.append([i, j - 1])
+                Clock.schedule_once(self.solve_DFS_Step, 0.1)
+                return
+            
+        # Check the top cell
+        if i - 1 >= 0 and not self.visited[i - 1][j]:
+            # Top Wall Check
+            if not self.tiles[i][j].borders[0]:
+                # We can go top
+                print ("Top")
+                self.stack.append([i - 1, j])
+                Clock.schedule_once(self.solve_DFS_Step, 0.1)
+                return
+            
+            
+        # Check the right cell
+        if j + 1 < self.cols and not self.visited[i][j + 1]:
+            # Right Wall Check
+            if not self.tiles[i][j].borders[1]:
+                # We can go right
+                print ("Right")
+                self.stack.append([i, j + 1])
+                Clock.schedule_once(self.solve_DFS_Step, 0.1)
+                return
+
+        
+        # Check the bottom cell
+        if i + 1 < self.rows and not self.visited[i + 1][j]:
+            # Bottom Wall Check
+            if not self.tiles[i+1][j].borders[0]:
+                # We can go bottom
+                print ("Bottom")
+                self.stack.append([i + 1, j])
+                Clock.schedule_once(self.solve_DFS_Step, 0.1)
+                return
+            
+        print("BackTracking")
+        # self.visited[i][j] = False
+        self.stack.pop()        
+        Clock.schedule_once(self.solve_DFS_Step, 0.1)
+
+            
+
+        
+
+        
+            
 
 
 
