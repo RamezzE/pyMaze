@@ -29,8 +29,8 @@ class Maze(BoxLayout):
         self.defaultColor = (1,1,1,1)
         self.defaultBorderColor = (0,0,0,1)
         
-        self.tileColor = (0.2,0.6,0.7,1)
-        self.borderColor = (0,1,0,1)
+        self.tileColor = (0.5,0.5,0.5,1)
+        self.borderColor = (1,1,0,1)
         
         for i in range(self.rows):
             for j in range(self.cols):
@@ -46,10 +46,10 @@ class Maze(BoxLayout):
         for i in range(self.rows):
             for j in range(self.cols):
                 self.tiles[i][j].setPosition(i * self.size[0] / self.rows + self.pos[0], j * self.size[1] / self.cols + self.pos[1])
-                # self.canvas.remove(self.tiles[i][j].)
-                # self.tiles[i][j].render()
-                
+                # self.remove_widget(self.tiles[i][j])
+        
         self.renderPlayer()
+        
     
     def renderPlayer(self):
         if self.player is not None:
@@ -65,7 +65,7 @@ class Maze(BoxLayout):
         
         with self.canvas:
             Color(*self.playerColor)
-            Rectangle(pos = playerPos, size = playerSize)
+            self.player = Rectangle(pos = playerPos, size = playerSize)
             
     def setPosition(self, pos):
         self.pos = pos
@@ -80,6 +80,8 @@ class Maze(BoxLayout):
             for j in range(self.cols):
                 self.tiles[i][j].color = self.defaultColor
                 self.tiles[i][j].borderColor = self.defaultBorderColor
+                self.tiles[i][j].setBorders(0, True)
+                self.tiles[i][j].setBorders(1, True)
         
         self.render()
     
@@ -91,7 +93,6 @@ class Maze(BoxLayout):
         
         self.__generateMaze(i, j)
     
-
     def __generateMaze(self, i, j):
         
         while True:
@@ -125,11 +126,9 @@ class Maze(BoxLayout):
             self.__generateMaze(nbrI, nbrJ)
 
     def __remove_wall(self, i, j, nbrI, nbrJ):
-        
-        # print("Removing wall between: ", i, j, " and ", nbrI, nbrJ)
-        
-        nbr2J = nbrJ
+                
         nbr2I = nbrI
+        nbr2J = nbrJ
 
         if nbrI == i:
             wall = 1
@@ -143,10 +142,8 @@ class Maze(BoxLayout):
                 nbr2I = i
         
         self.tiles[i][j].setBorders(wall, False)
-        # self.tiles[i][j].renderBorders()
         
         self.tiles[nbr2I][nbr2J].setBorders(wall, False)
-        # self.tiles[nbr2I][nbr2J].renderBorders()
         
         # time.sleep(2)        
     

@@ -11,7 +11,7 @@ class Tile(Widget):
 
         self.borders = [True, True]
         self.borderColor = (0, 0, 0, 1)
-        self.rightBorder = self.bottomBorder = None
+        self.rightBorder = self.topBorder = None
         self.borderWidth = 0.5
 
         self.render()
@@ -40,17 +40,17 @@ class Tile(Widget):
                     width=self.borderWidth,
                 )
 
-        # bottom border
-        if self.bottomBorder is not None:
-            self.canvas.remove(self.bottomBorder)
+        # top border
+        if self.topBorder is not None:
+            self.canvas.remove(self.topBorder)
             
         if self.borders[1] == True:
             with self.canvas:
                 Color(*self.borderColor)
                 Line(
                     points=[
-                        self.pos[0], self.pos[1],
-                        self.pos[0] + self.size[0], self.pos[1]
+                        self.pos[0], self.pos[1] + self.size[1],
+                        self.pos[0] + self.size[0], + self.size[1] + self.pos[1]
                     ],
                     width=self.borderWidth,
                 )
