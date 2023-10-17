@@ -5,19 +5,20 @@ import random
 from kivy.clock import Clock
 from functools import partial
 from collections import deque
-
+from kivy.core.window import Window
+from kivy.uix.label import Label
 
 from tile import Tile
 
 class Maze(GridLayout):
-    def __init__(self, rows, cols, size, **kwargs):
+    def __init__(self, rows, cols, **kwargs):
         super(Maze, self).__init__(**kwargs)
-        self.size_hint = (None, None)
-        self.minimum_size = size
-        self.rows = rows
-        self.cols = cols
-        self.size = size
-        
+        # self.size_hint = (None, None)
+        # self.minimum_size = (500,375)
+        # self.size = self.minimum_size
+        print(self.size)
+        self.rows = rows+1
+        self.cols = cols+1
         self.tiles = [[None for i in range(self.cols)] for j in range(self.rows)]
         
         self.player = None
@@ -32,15 +33,28 @@ class Maze(GridLayout):
         self.borderColor = (0.8,0.8,0.8,1)
         self.correctPathColor = (205/255, 84/255, 29/255,1)
         self.visitedColor = (56/255, 104/255, 88/255,1)
-                
+        self.currentAlgorithm = "DFS"
+        
+        # self.canvas.clear()
         for i in range(self.rows):
             for j in range(self.cols):
                 tile = Tile(self.size[0] / self.rows, self.size[1] / self.cols)
                 tile.setPosition(i * self.size[0] / self.rows + self.pos[0], j * self.size[1] / self.cols + self.pos[1])
                 self.tiles[i][j] = tile
                 self.add_widget(tile)
-
-        self.__clearMaze()        
+                
+        
+        self.__clearMaze() 
+        self.__renderPlayer()
+        self.resize(self.size)   
+        
+    def __render(self):
+        # self.canvas.clear()
+        for i in range(self.rows):
+            for j in range(self.cols):
+                self.tiles[i][j].setSize(self.size[0] / self.rows, self.size[1] / self.cols)
+                self.tiles[i][j].setPosition(i * self.size[0] / self.rows + self.pos[0], j * self.size[1] / self.cols + self.pos[1])
+                
         self.__renderPlayer()
     
     def __renderPlayer(self, instance = None):
@@ -65,7 +79,7 @@ class Maze(GridLayout):
     
     def resize(self, size):
         self.size = size
-        # self.render()
+        self.__render()
         
     def __resetColors(self):
         for i in range(self.rows):
@@ -203,14 +217,17 @@ class Maze(GridLayout):
         return neighbors
     
     def solve_DFS(self, instance = None):
-        print("Solving Maze with DFS")
-        
+                
         # Get the starting point & Goal
         start = [0,0]
+        goal = [self.rows - 1, self.cols - 1]
+
+        # Create a stack for DFS
         stack = []
         stack.append(start)
+        
+        # Create a visited array
         visited = [[False for i in range(self.cols)] for j in range(self.rows)]
-        goal = [self.rows - 1, self.cols - 1]
         
         self.__resetColors()
 
@@ -230,7 +247,7 @@ class Maze(GridLayout):
         self.__renderPlayer()
         
         if stack[-1] == goal:
-            print("Goal Reached")
+            # Reached Goal
             self.__backTrackPath_DFS(stack)
             return
         
@@ -239,7 +256,6 @@ class Maze(GridLayout):
             # Left Wall Check
             if not self.tiles[i][j-1].borders[1]:
                 # We can go left
-                print ("Left")
                 stack.append([i, j - 1])
                 Clock.schedule_once(partial(self.__solve_DFS_Step,stack, visited, goal), 0.1)
                 return
@@ -249,7 +265,6 @@ class Maze(GridLayout):
             # Top Wall Check
             if not self.tiles[i][j].borders[0]:
                 # We can go top
-                print ("Top")
                 stack.append([i - 1, j])
                 Clock.schedule_once(partial(self.__solve_DFS_Step,stack,visited, goal), 0.1)
                 return
@@ -260,7 +275,6 @@ class Maze(GridLayout):
             # Right Wall Check
             if not self.tiles[i][j].borders[1]:
                 # We can go right
-                print ("Right")
                 stack.append([i, j + 1])
                 Clock.schedule_once(partial(self.__solve_DFS_Step,stack,visited, goal), 0.1)
                 return
@@ -271,12 +285,11 @@ class Maze(GridLayout):
             # Bottom Wall Check
             if not self.tiles[i+1][j].borders[0]:
                 # We can go bottom
-                print ("Bottom")
                 stack.append([i + 1, j])
                 Clock.schedule_once(partial(self.__solve_DFS_Step,stack,visited, goal), 0.1)
                 return
             
-        print("BackTracking")
+        # No Unvisited Neighbours found, go back (Backtracking)
         stack.pop()        
         Clock.schedule_once(partial(self.__solve_DFS_Step,stack, visited, goal), 0.1)
 
@@ -289,16 +302,19 @@ class Maze(GridLayout):
         Clock.schedule_once(partial(self.__backTrackPath_DFS, stack), 0.1)
         
     def solve_BFS(self, instance = None):
-        print("Solving Maze with BFS")
-        
+                
         # Get the starting point & Goal
         start = [0,0]
         goal = [self.rows - 1, self.cols - 1]
 
+        # Create a queue for BFS
         deque_BFS = deque()
         deque_BFS.append(start)
         
+        # Creating a visited array
         visited =[[False for i in range(self.cols)] for j in range(self.rows)]
+        
+        # Creating a parent array to track correct path
         parent = [[None for i in range(self.cols)] for j in range(self.rows)]
         
         self.__resetColors()
@@ -320,7 +336,7 @@ class Maze(GridLayout):
         self.__renderPlayer()
         
         if [i,j] == goal:
-            print("Reached Goal")
+            # Reached Goal
             self.__backTrackPath_BFS(goal, parent)
             return
         
@@ -344,15 +360,12 @@ class Maze(GridLayout):
         
         Clock.schedule_once(partial(self.__backTrackPath_BFS, [parentI, parentJ], parent), 0.1)
         
+    def changeAlgorithm(self, algorithm, instance = None, *args):
+        self.currentAlgorithm = algorithm 
         
-        
-        
-        
-        
-        
-
-        
-            
-
-
-
+    def solveMaze(self, instance = None):
+        print(self.currentAlgorithm)
+        if self.currentAlgorithm == "DFS":
+            self.solve_DFS()        
+        else:
+            self.solve_BFS()

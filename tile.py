@@ -2,9 +2,8 @@ from kivy.uix.widget import Widget
 from kivy.graphics import Rectangle, Line
 from kivy.graphics.context_instructions import Color
 
-
 class Tile(Widget):
-    def __init__(self, height, width, **kwargs):
+    def __init__(self, width, height, **kwargs):
         super(Tile, self).__init__(**kwargs)
         self.size = (width, height)
         self.color = (1, 1, 1, 1)

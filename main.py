@@ -1,30 +1,10 @@
 from kivy.app import App
-from kivy.uix.boxlayout import BoxLayout
-from kivy.core.window import Window
-from kivy.uix.button import Button
-from kivy.clock import Clock
-
-from maze import Maze
+from mainScreen import MainScreen
 
 class MazeApp(App):
     def build(self):
-        layout = BoxLayout(orientation='vertical')
-        self.maze = Maze(6, 6, (600,600))
-        # maze.setPosition((20,20))
-        layout.add_widget(self.maze)
-        
-        button_generateMaze = Button(text="Generate Maze")
-        button_solveDFS = Button(text="Solve with DFS")
-        button_solveBFS = Button(text="Solve with BFS")
-        
-        button_generateMaze.bind(on_press=self.maze.generateMaze)
-        button_solveDFS.bind(on_press=self.maze.solve_DFS)
-        button_solveBFS.bind(on_press=self.maze.solve_BFS)
-
-        layout.add_widget(button_generateMaze)
-        layout.add_widget(button_solveDFS)
-        layout.add_widget(button_solveBFS)
-        return layout
+        screen = MainScreen()
+        return screen.getRoot()
 
 if __name__ == '__main__':
     MazeApp().run()
