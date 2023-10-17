@@ -6,19 +6,25 @@ from kivy.core.window import Window
 from kivy.uix.label import Label
 from kivy.uix.checkbox import CheckBox
 from functools import partial
+from kivy.graphics.context_instructions import Color
 
 class MainScreen(Widget):
     def __init__(self, **kwargs):
         
-        self.Maze = Maze(6,6)
+        self.Maze = Maze(10,10)
         self.Maze.resize(self.size)
         self.currentAlgorithm = "DFS"
         
+        self.textColor = (231/255, 157/255, 86/255,1)
+        self.buttonBackgroundColor = (40/255, 90/255, 107/255,1)
+                
         self.__initButtons()
         
         self.root = BoxLayout(orientation='horizontal')
         self.root.add_widget(self.Maze)
         self.root.add_widget(self.buttonsBox)
+        
+        Window.clearcolor = (0.3, 0.3, 0.3, 1)
         
     def __initButtons(self):
         self.buttons = []
@@ -34,14 +40,25 @@ class MainScreen(Widget):
         self.buttonsBox = BoxLayout(orientation='vertical')
         self.buttonsBox.size_hint_max = (Window.width/4, Window.height/4)
         self.buttonsBox.padding = 10
+                
+        self.stepsLabel =  Label(text=f'Steps: {self.Maze.steps}')
+        self.stepsLabel.color = self.textColor
+        
+        self.buttonsBox.add_widget(self.stepsLabel)
+        
+        self.Maze.initLabels(self.stepsLabel)
         
         for button in self.buttons:
             self.buttonsBox.add_widget(button)
             button.size_hint_max = (button.parent.width, button.parent.height/2)
             button.margin = 10
-            
+            button.color = self.textColor
+            button.background_color = self.buttonBackgroundColor
+
         self.__initRadioButtons()
         self.buttonsBox.add_widget(self.radioButtonsBox)
+        
+        self.buttonsBox.canvas.add(Color(rgba=self.textColor))
             
     def __initRadioButtons(self):
         self.radioButtons = []
@@ -69,9 +86,10 @@ class MainScreen(Widget):
             # button.size_hint_max = (button.parent.width, button.parent.height/2)
             button.margin = 10
             
-        # for label in self.radioLabels:
-        #     label.size_hint_max = (label.parent.width, label.parent.height/2)
-        #     label.margin = 10
+        for label in self.radioLabels:
+            label.color = self.textColor
+            # label.size_hint_max = (label.parent.width, label.parent.height/2)
+            # label.margin = 10
             
         self.radioButtonsBox.add_widget(self.radioLabels[0])
         self.radioButtonsBox.add_widget(self.radioButtons[0])

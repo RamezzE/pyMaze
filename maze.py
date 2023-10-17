@@ -31,9 +31,12 @@ class Maze(GridLayout):
         
         self.tileColor = (26/255, 58/255, 69/255,1)
         self.borderColor = (0.8,0.8,0.8,1)
-        self.correctPathColor = (205/255, 84/255, 29/255,1)
+        self.correctPathColor = (205/255, 84/255, 29/255,0.5)
         self.visitedColor = (56/255, 104/255, 88/255,1)
         self.currentAlgorithm = "DFS"
+        
+        self.steps = 0
+        
         
         # self.canvas.clear()
         for i in range(self.rows):
@@ -95,9 +98,11 @@ class Maze(GridLayout):
                 self.tiles[i][j].setBorders(1, True)
             
     def generateMaze(self, instance = None):
-        print("Generating Maze")
-        self.__clearMaze()
         
+        self.__clearMaze()
+        self.steps = 0
+        self.stepsLabel.text = f'Steps: {self.steps}'
+
         # Randomize starting point of maze generation
         
         i = random.randint(0, self.rows - 1)
@@ -108,6 +113,8 @@ class Maze(GridLayout):
         self.__generateMazeStep(stack, visited)
         
     def __generateMazeStep(self, stack, visited, instance = None):
+        self.steps += 1
+        self.stepsLabel.text = f'Steps: {self.steps}'
         
         if len(stack) == 0:
             return
@@ -218,6 +225,9 @@ class Maze(GridLayout):
     
     def solve_DFS(self, instance = None):
                 
+        self.steps = 0
+        self.stepsLabel.text = f'Steps: {self.steps}'
+
         # Get the starting point & Goal
         start = [0,0]
         goal = [self.rows - 1, self.cols - 1]
@@ -235,6 +245,9 @@ class Maze(GridLayout):
         
     def __solve_DFS_Step(self, stack, visited, goal, instance = None):
             
+        self.steps += 1
+        self.stepsLabel.text = f'Steps: {self.steps}'
+        
         if len(stack) == 0:
             print("No Solution")
             return
@@ -303,6 +316,9 @@ class Maze(GridLayout):
         
     def solve_BFS(self, instance = None):
                 
+        self.steps = 0
+        self.stepsLabel.text = f'Steps: {self.steps}'
+
         # Get the starting point & Goal
         start = [0,0]
         goal = [self.rows - 1, self.cols - 1]
@@ -322,7 +338,10 @@ class Maze(GridLayout):
         self.__solve_BFS_Step(deque_BFS, visited, goal, parent)
         
     def __solve_BFS_Step(self, deque, visited, goal, parent, instance = None):
-                        
+                      
+        self.steps += 1  
+        self.stepsLabel.text = f'Steps: {self.steps}'
+
         if len(deque) == 0:
             print("No Solution")
             return
@@ -369,3 +388,9 @@ class Maze(GridLayout):
             self.solve_DFS()        
         else:
             self.solve_BFS()
+            
+    def initLabels(self, stepsLabel):
+        print("Hello")
+        self.stepsLabel = stepsLabel
+        self.stepsLabel.text = f'Steps: {self.steps}'
+        
