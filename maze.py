@@ -32,20 +32,18 @@ class Maze(GridLayout):
         self.correctPathColor = (205/255, 84/255, 29/255,0.5)
         self.visitedColor = (56/255, 104/255, 88/255,1)
         self.currentAlgorithm = "DFS"
+        self.speed = 0.1
         
         self.steps = 0
         self.pause = self.isGenerated = self.chooseStart = self.chooseEnd = False
-        
         self.update_rows_cols(self.rows,self.cols)
         
     def __render(self):
         for i in range(self.rows):
             for j in range(self.cols):
                 self.tiles[i][j].setSize(self.width / self.rows, self.height / self.cols)
-        
-        # self.__renderPlayer()
-    
-    def __renderPlayer(self, instance = None):
+            
+    def __renderPlayer(self, *args):
         if self.player is not None:
             self.canvas.remove(self.player)
         
@@ -110,7 +108,7 @@ class Maze(GridLayout):
     def __generateMazeStep(self, stack, visited, instance = None):
         
         if(self.pause):
-            Clock.schedule_once(partial(self.__generateMazeStep, stack, visited), 0.1)
+            Clock.schedule_once(partial(self.__generateMazeStep, stack, visited), self.speed)
             return
         
         self.steps += 1
@@ -124,6 +122,8 @@ class Maze(GridLayout):
             self.__renderPlayer()
             
             self.buttons[1].disabled = False
+            self.buttons[4].disabled = False
+            self.buttons[5].disabled = False
             self.buttons[6].disabled = False
             
             return
@@ -137,7 +137,7 @@ class Maze(GridLayout):
         self.tiles[i][j].setBorderColor(self.borderColor)
         
         # Update player position on screen
-        self.currentPos = (i,j)
+        self.currentPos = [i,j]
         self.__renderPlayer()
         
         # Get the unvisited neighbours of the current cell
@@ -145,7 +145,7 @@ class Maze(GridLayout):
         
         if len(neighbours_unvisited) == 0:
             stack.pop()
-            Clock.schedule_once(partial(self.__generateMazeStep, stack, visited), 0.1)
+            Clock.schedule_once(partial(self.__generateMazeStep, stack, visited), self.speed)
             return
         
         neighbour = random.choice(neighbours_unvisited)
@@ -157,7 +157,7 @@ class Maze(GridLayout):
         self.__remove_wall(stack[-1], neighbour)
         
         stack.append([nbrI, nbrJ])
-        Clock.schedule_once(partial(self.__generateMazeStep, stack, visited), 0.1)
+        Clock.schedule_once(partial(self.__generateMazeStep, stack, visited), self.speed)
         
     def __remove_wall(self, currentCell, neighbour):
         
@@ -251,7 +251,7 @@ class Maze(GridLayout):
     def __solve_DFS_Step(self, stack, visited, goal, instance = None):
             
         if(self.pause):
-            Clock.schedule_once(partial(self.__solve_DFS_Step,stack, visited, goal), 0.1)
+            Clock.schedule_once(partial(self.__solve_DFS_Step,stack, visited, goal), self.speed)
             return
             
         self.steps += 1
@@ -279,7 +279,7 @@ class Maze(GridLayout):
             if not self.tiles[i][j-1].borders[1]:
                 # We can go left
                 stack.append([i, j - 1])
-                Clock.schedule_once(partial(self.__solve_DFS_Step,stack, visited, goal), 0.1)
+                Clock.schedule_once(partial(self.__solve_DFS_Step,stack, visited, goal), self.speed)
                 return
             
         # Check the top cell
@@ -288,7 +288,7 @@ class Maze(GridLayout):
             if not self.tiles[i][j].borders[0]:
                 # We can go top
                 stack.append([i - 1, j])
-                Clock.schedule_once(partial(self.__solve_DFS_Step,stack,visited, goal), 0.1)
+                Clock.schedule_once(partial(self.__solve_DFS_Step,stack,visited, goal), self.speed)
                 return
             
             
@@ -298,7 +298,7 @@ class Maze(GridLayout):
             if not self.tiles[i][j].borders[1]:
                 # We can go right
                 stack.append([i, j + 1])
-                Clock.schedule_once(partial(self.__solve_DFS_Step,stack,visited, goal), 0.1)
+                Clock.schedule_once(partial(self.__solve_DFS_Step,stack,visited, goal), self.speed)
                 return
 
         
@@ -308,12 +308,12 @@ class Maze(GridLayout):
             if not self.tiles[i+1][j].borders[0]:
                 # We can go bottom
                 stack.append([i + 1, j])
-                Clock.schedule_once(partial(self.__solve_DFS_Step,stack,visited, goal), 0.1)
+                Clock.schedule_once(partial(self.__solve_DFS_Step,stack,visited, goal), self.speed)
                 return
             
         # No Unvisited Neighbours found, go back (Backtracking)
         stack.pop()        
-        Clock.schedule_once(partial(self.__solve_DFS_Step,stack, visited, goal), 0.1)
+        Clock.schedule_once(partial(self.__solve_DFS_Step,stack, visited, goal), self.speed)
 
     def __backTrackPath_DFS(self, stack, instance = None):
         if len(stack) == 0:
@@ -326,7 +326,7 @@ class Maze(GridLayout):
         i,j = stack[-1]
         self.tiles[i][j].setColor(self.correctPathColor)
         stack.pop()
-        Clock.schedule_once(partial(self.__backTrackPath_DFS, stack), 0.1)
+        Clock.schedule_once(partial(self.__backTrackPath_DFS, stack), self.speed)
         
     def solve_BFS(self, instance = None):
                 
@@ -350,7 +350,7 @@ class Maze(GridLayout):
     def __solve_BFS_Step(self, deque, visited, goal, parent, instance = None):
                       
         if(self.pause):
-            Clock.schedule_once(partial(self.__solve_BFS_Step,deque, visited, goal, parent), 0.1)            
+            Clock.schedule_once(partial(self.__solve_BFS_Step,deque, visited, goal, parent), self.speed)            
             return              
         
         self.steps += 1  
@@ -379,7 +379,7 @@ class Maze(GridLayout):
             deque.append(neighbour)
             parent[neighbour[0]][neighbour[1]] = [i,j]
             
-        Clock.schedule_once(partial(self.__solve_BFS_Step,deque, visited, goal, parent), 0.1)
+        Clock.schedule_once(partial(self.__solve_BFS_Step,deque, visited, goal, parent), self.speed)
             
     def __backTrackPath_BFS(self, goal, parent, instance = None):
         i,j = goal
@@ -395,7 +395,7 @@ class Maze(GridLayout):
         parentI, parentJ = parent[i][j]
         self.tiles[parentI][parentJ].setColor(self.correctPathColor)
         
-        Clock.schedule_once(partial(self.__backTrackPath_BFS, [parentI, parentJ], parent), 0.1)
+        Clock.schedule_once(partial(self.__backTrackPath_BFS, [parentI, parentJ], parent), self.speed)
         
     def changeAlgorithm(self, algorithm, instance = None, *args):
         self.currentAlgorithm = algorithm 
@@ -448,8 +448,10 @@ class Maze(GridLayout):
         self.__render()
         
     def changeGoal(self, newGoal):
-        self.goalPos = newGoal
+        self.goalPos = newGoal    
         self.__resetColors()
+        for i in range(4,7):
+            self.buttons[i].disabled = False
         
     def changeStart(self, newStart):
         self.startPos = newStart
@@ -457,3 +459,5 @@ class Maze(GridLayout):
         self.startPos = newStart
         self.__resetColors()
         self.__renderPlayer()
+        for i in range(4,7):
+            self.buttons[i].disabled = False

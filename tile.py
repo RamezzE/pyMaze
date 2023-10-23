@@ -21,6 +21,7 @@ class Tile(Widget):
             Rectangle(pos=self.pos, size=self.size)
 
         self.renderBorders()
+        self.parent._Maze__renderPlayer()
 
     def renderBorders(self):
         # top border
@@ -85,7 +86,7 @@ class Tile(Widget):
     
     def on_touch_down(self, touch):
         if self.parent.chooseEnd == True:
-            if self.collide_point(*touch.pos):
+            if self.collide_point(*touch.pos):   
                 self.parent.chooseEnd = False
                 self.parent.changeGoal(self.getIndex())
                 

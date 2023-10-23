@@ -65,13 +65,15 @@ class MainScreen(Widget):
         try:
             if i == 0:
                 self.sliderLabels[i].text = f"Rows: {int(value)}"
-            else:
+            elif i == 1:
                 self.sliderLabels[i].text = f"Cols: {int(value)}"
+            else:
+                self.sliderLabels[i].text = f"Speed: {float(value)}x"
+                self.Maze.speed = float(1/(value*10))
         except:
             pass
 
     def __initButtons(self):
-        # self.buttons = []
         for i in range(7):
             self.buttons.append(Button())
         
@@ -89,12 +91,13 @@ class MainScreen(Widget):
         self.buttons[0].bind(on_release=self.Maze.generateMaze)
         self.buttons[1].bind(on_release=self.Maze.solveMaze)
         
-        self.buttons[4].bind(on_release=lambda *args: setattr(self.Maze, 'chooseStart', True))  
-        self.buttons[5].bind(on_release=lambda *args: setattr(self.Maze, 'chooseEnd', True))  
-              
+        # self.buttons[4].bind(on_release=lambda *args: setattr(self.Maze, 'chooseStart', True))  
+        self.buttons[4].bind(on_release=self.changeMazeStart)  
+        self.buttons[5].bind(on_release=self.changeMazeEnd)  
+        # self.buttons[5].bind(on_release=lambda *args: setattr(self.Maze, 'chooseEnd', True))  
+        
         self.buttonsBox = BoxLayout(orientation='vertical',padding = 10, spacing = 2)
         
-                
         stepsLabel =  Label(text=f'Steps: {self.Maze.steps}')
         stepsLabel.color = self.textColor
         
@@ -122,6 +125,18 @@ class MainScreen(Widget):
             button.color = self.textColor
             button.background_color = self.buttonBackgroundColor
             
+        self.__initSliders()
+
+        
+        speedHbox = BoxLayout(orientation = "horizontal")
+        self.sliderLabels.append(Label(text = "Speed: 1.0x"))
+        speedHbox.add_widget(self.sliderLabels[2])
+        
+        self.sliders.append(Slider(min = 1, max = 10, value = 1, step = 0.5))
+        self.sliders[2].bind(value=lambda instance, value, i=2: self.on_slider_value(instance, value, i))
+
+        speedHbox.add_widget(self.sliders[2])
+            
         hbox = BoxLayout(orientation = "horizontal")
 
         hbox.add_widget(self.buttons[4])
@@ -130,18 +145,16 @@ class MainScreen(Widget):
         self.__initRadioButtons()
         self.buttonsBox.add_widget(self.radioButtonsBox)    
         self.buttonsBox.add_widget(pause_continue_button_box)
+        self.buttonsBox.add_widget(speedHbox)
         self.buttonsBox.add_widget(hbox)
         
-        self.__initSliders()
         self.buttons[6].bind(on_release=lambda button: self.Maze.update_rows_cols(int(self.sliders[0].value), int(self.sliders[1].value)))
 
         self.slidersBox.add_widget(self.buttons[6])
         self.buttonsBox.add_widget(self.slidersBox)
         
         self.buttonsBox.canvas.add(Color(rgba=self.textColor))
-        
-        
-            
+              
     def __initRadioButtons(self):
         self.radioButtons = []
         self.radioLabels = []
@@ -180,5 +193,19 @@ class MainScreen(Widget):
         
     def getRoot(self):
         return self.root
+    
+    def changeMazeStart(self, button):
+        self.Maze.chooseStart = True
+        self.Maze.chooseEnd = False
+        
+        for i in range(4,7):
+            self.buttons[i].disabled = True
+        
+    def changeMazeEnd(self, button):
+        self.Maze.chooseStart = False
+        self.Maze.chooseEnd = True
+        
+        for i in range(4,7):
+            self.buttons[i].disabled = True
         
 
