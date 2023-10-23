@@ -13,9 +13,8 @@ from tile import Tile
 class Maze(GridLayout):
     def __init__(self, rows, cols, **kwargs):
         super(Maze, self).__init__(**kwargs)
-        # self.size_hint = (None, None)
-        # self.minimum_size = (500,375)
-        # self.size = self.minimum_size
+        print(self.size, self.pos)
+    
         print(self.size)
         self.rows = rows+1
         self.cols = cols+1
@@ -24,7 +23,7 @@ class Maze(GridLayout):
         self.player = None
         self.playerColor = (116/255, 133/255, 101/255,1)     
         
-        self.currentPos = (2,2)
+        self.currentPos = (0,0)
         
         self.defaultColor = (1,1,1,1)
         self.defaultBorderColor = (0,0,0,1)
@@ -47,9 +46,9 @@ class Maze(GridLayout):
                 self.add_widget(tile)
                 
         
-        self.__clearMaze() 
-        self.__renderPlayer()
-        self.resize(self.size)   
+        self.__render()
+        # self.resize(self.size)   
+        self.__clearMaze()
         
     def __render(self):
         # self.canvas.clear()
@@ -81,8 +80,15 @@ class Maze(GridLayout):
         self.__renderPlayer()
     
     def resize(self, size):
+        print('Before resizing',self.size, self.pos)
+
+        self.size_hint = (None, None)
+        self.minimum_size = size
         self.size = size
         self.__render()
+        
+        print("AFter resizing",self.size, self.pos)
+
         
     def __resetColors(self):
         for i in range(self.rows):
@@ -98,6 +104,8 @@ class Maze(GridLayout):
                 self.tiles[i][j].setBorders(1, True)
             
     def generateMaze(self, instance = None):
+        
+        print(self.size, self.pos)
         
         self.__clearMaze()
         self.steps = 0

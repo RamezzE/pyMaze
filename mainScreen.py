@@ -12,7 +12,9 @@ class MainScreen(Widget):
     def __init__(self, **kwargs):
         
         self.Maze = Maze(10,10)
-        self.Maze.resize(self.size)
+        print("Self  ", self.size)
+        # self.Maze.resize(self.size)
+        self.Maze.resize((Window.width* 0.75,Window.height))
         self.currentAlgorithm = "DFS"
         
         self.textColor = (231/255, 157/255, 86/255,1)
