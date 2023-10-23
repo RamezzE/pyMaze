@@ -11,8 +11,8 @@ from kivy.graphics.context_instructions import Color
 
 class MainScreen(Widget):
     def __init__(self, **kwargs):
-        
-        self.Maze = Maze(5,5)
+        self.buttons = []
+        self.Maze = Maze(5,5, self.buttons)
         self.Maze.resize((Window.height,Window.height))
         Window.bind(on_resize=lambda window, width, height: self.Maze.resize((height, height)))
         self.currentAlgorithm = "DFS"
@@ -60,8 +60,7 @@ class MainScreen(Widget):
         hbox.add_widget(self.sliders[1])
         
         self.slidersBox.add_widget(hbox)
-        
-        
+          
     def on_slider_value(self, instance, value, i):
         try:
             if i == 0:
@@ -72,7 +71,7 @@ class MainScreen(Widget):
             pass
 
     def __initButtons(self):
-        self.buttons = []
+        # self.buttons = []
         for i in range(7):
             self.buttons.append(Button())
         
@@ -84,6 +83,8 @@ class MainScreen(Widget):
         self.buttons[5].text = "Choose End"
         self.buttons[6].text = "Apply"
         
+        for i in range(1,6):
+            self.buttons[i].disabled = True
         
         self.buttons[0].bind(on_release=self.Maze.generateMaze)
         self.buttons[1].bind(on_release=self.Maze.solveMaze)
@@ -138,6 +139,8 @@ class MainScreen(Widget):
         self.buttonsBox.add_widget(self.slidersBox)
         
         self.buttonsBox.canvas.add(Color(rgba=self.textColor))
+        
+        
             
     def __initRadioButtons(self):
         self.radioButtons = []

@@ -9,9 +9,9 @@ from collections import deque
 from tile import Tile
 
 class Maze(GridLayout):
-    def __init__(self, rows, cols, **kwargs):
+    def __init__(self, rows, cols, buttons, **kwargs):
         super(Maze, self).__init__(**kwargs)
-        
+        self.buttons = buttons
         self.rows = rows
         self.cols = cols
         self.tiles = [[None for j in range(self.cols)] for i in range(self.rows)]
@@ -79,7 +79,9 @@ class Maze(GridLayout):
                         
     def __clearMaze(self):     
         self.isGenerated = False
-   
+        for i in range(1,6):
+            self.buttons[i].disabled = True
+
         for i in range(self.rows):
             for j in range(self.cols):
                 self.tiles[i][j].setColor(self.defaultColor)
@@ -100,6 +102,9 @@ class Maze(GridLayout):
         visited = [[False for i in range(self.cols)] for j in range(self.rows)]
         stack = [[i, j]]
         
+        self.buttons[2].disabled = False
+        self.buttons[6].disabled = True
+        
         self.__generateMazeStep(stack, visited)
         
     def __generateMazeStep(self, stack, visited, instance = None):
@@ -117,6 +122,10 @@ class Maze(GridLayout):
             self.tiles[i][j].setColor(self.goalColor)
             self.currentPos = self.startPos
             self.__renderPlayer()
+            
+            self.buttons[1].disabled = False
+            self.buttons[6].disabled = False
+            
             return
         
         i, j = stack[-1]
@@ -308,7 +317,12 @@ class Maze(GridLayout):
 
     def __backTrackPath_DFS(self, stack, instance = None):
         if len(stack) == 0:
+            self.buttons[0].disabled = False
+            self.buttons[4].disabled = False
+            self.buttons[5].disabled = False
+            self.buttons[6].disabled = False
             return
+        
         i,j = stack[-1]
         self.tiles[i][j].setColor(self.correctPathColor)
         stack.pop()
@@ -371,6 +385,10 @@ class Maze(GridLayout):
         i,j = goal
         
         if parent[i][j] is None:
+            self.buttons[0].disabled = False
+            self.buttons[4].disabled = False
+            self.buttons[5].disabled = False
+            self.buttons[6].disabled = False
             return
         
         self.tiles[i][j].setColor(self.correctPathColor)
@@ -387,6 +405,9 @@ class Maze(GridLayout):
         if not self.isGenerated:
             return
         
+        self.buttons[0].disabled = True
+        self.buttons[6].disabled = True
+        
         if self.currentAlgorithm == "DFS":
             self.solve_DFS()        
         else:
@@ -398,6 +419,12 @@ class Maze(GridLayout):
         
     def togglePause(self, instance = None):
         self.pause = not self.pause
+        if self.pause:
+            self.buttons[2].disabled = True
+            self.buttons[3].disabled = False
+        else:
+            self.buttons[3].disabled = True
+            self.buttons[2].disabled = False
         
     def update_rows_cols(self,rows,cols, *args):
         self.clear_widgets()
@@ -411,6 +438,12 @@ class Maze(GridLayout):
             for j in range(self.cols):
                 self.tiles[i][j] = Tile()
                 self.add_widget(self.tiles[i][j])
+                
+        try:
+            for i in range(1,6):
+                self.buttons[i].disabled = True
+        except:
+            pass
         
         self.__render()
         
