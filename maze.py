@@ -13,12 +13,10 @@ from tile import Tile
 class Maze(GridLayout):
     def __init__(self, rows, cols, **kwargs):
         super(Maze, self).__init__(**kwargs)
-        print(self.size, self.pos)
-    
-        print(self.size)
-        self.rows = rows+1
-        self.cols = cols+1
-        self.tiles = [[None for i in range(self.cols)] for j in range(self.rows)]
+        
+        self.rows = rows
+        self.cols = cols
+        self.tiles = [[None for j in range(self.cols)] for i in range(self.rows)]
         
         self.player = None
         self.playerColor = (116/255, 133/255, 101/255,1)     
@@ -35,29 +33,16 @@ class Maze(GridLayout):
         self.currentAlgorithm = "DFS"
         
         self.steps = 0
+        self.pause = self.isGenerated = False
         
-        
-        # self.canvas.clear()
-        for i in range(self.rows):
-            for j in range(self.cols):
-                tile = Tile(self.size[0] / self.rows, self.size[1] / self.cols)
-                tile.setPosition(i * self.size[0] / self.rows + self.pos[0], j * self.size[1] / self.cols + self.pos[1])
-                self.tiles[i][j] = tile
-                self.add_widget(tile)
-                
-        
-        self.__render()
-        # self.resize(self.size)   
-        self.__clearMaze()
+        self.update_rows_cols(self.rows,self.cols)
         
     def __render(self):
-        # self.canvas.clear()
         for i in range(self.rows):
             for j in range(self.cols):
-                self.tiles[i][j].setSize(self.size[0] / self.rows, self.size[1] / self.cols)
-                self.tiles[i][j].setPosition(i * self.size[0] / self.rows + self.pos[0], j * self.size[1] / self.cols + self.pos[1])
-                
-        self.__renderPlayer()
+                self.tiles[i][j].setSize(self.width / self.rows, self.height / self.cols)
+        
+        # self.__renderPlayer()
     
     def __renderPlayer(self, instance = None):
         if self.player is not None:
@@ -77,36 +62,29 @@ class Maze(GridLayout):
             
     def setPosition(self, pos):
         self.pos = pos
-        self.__renderPlayer()
+        # self.__render()
     
-    def resize(self, size):
-        print('Before resizing',self.size, self.pos)
-
+    def resize(self, size, *args):
         self.size_hint = (None, None)
-        self.minimum_size = size
         self.size = size
-        self.__render()
+        # self.__render()
         
-        print("AFter resizing",self.size, self.pos)
-
-        
+     
     def __resetColors(self):
         for i in range(self.rows):
             for j in range(self.cols):
                 self.tiles[i][j].setColor(self.tileColor)
-                          
+                        
     def __clearMaze(self):        
         for i in range(self.rows):
             for j in range(self.cols):
-                self.tiles[i][j].color = self.defaultColor
+                self.tiles[i][j].setColor(self.defaultColor)
                 self.tiles[i][j].borderColor = self.defaultBorderColor
                 self.tiles[i][j].setBorders(0, True)
                 self.tiles[i][j].setBorders(1, True)
             
     def generateMaze(self, instance = None):
-        
-        print(self.size, self.pos)
-        
+                
         self.__clearMaze()
         self.steps = 0
         self.stepsLabel.text = f'Steps: {self.steps}'
@@ -121,6 +99,11 @@ class Maze(GridLayout):
         self.__generateMazeStep(stack, visited)
         
     def __generateMazeStep(self, stack, visited, instance = None):
+        
+        if(self.pause):
+            Clock.schedule_once(partial(self.__generateMazeStep, stack, visited), 0.1)
+            return
+        
         self.steps += 1
         self.stepsLabel.text = f'Steps: {self.steps}'
         
@@ -253,6 +236,10 @@ class Maze(GridLayout):
         
     def __solve_DFS_Step(self, stack, visited, goal, instance = None):
             
+        if(self.pause):
+            Clock.schedule_once(partial(self.__solve_DFS_Step,stack, visited, goal), 0.1)
+            return
+            
         self.steps += 1
         self.stepsLabel.text = f'Steps: {self.steps}'
         
@@ -347,6 +334,10 @@ class Maze(GridLayout):
         
     def __solve_BFS_Step(self, deque, visited, goal, parent, instance = None):
                       
+        if(self.pause):
+            Clock.schedule_once(partial(self.__solve_BFS_Step,deque, visited, goal, parent), 0.1)            
+            return              
+        
         self.steps += 1  
         self.stepsLabel.text = f'Steps: {self.steps}'
 
@@ -391,14 +382,29 @@ class Maze(GridLayout):
         self.currentAlgorithm = algorithm 
         
     def solveMaze(self, instance = None):
-        print(self.currentAlgorithm)
         if self.currentAlgorithm == "DFS":
             self.solve_DFS()        
         else:
             self.solve_BFS()
             
     def initLabels(self, stepsLabel):
-        print("Hello")
         self.stepsLabel = stepsLabel
         self.stepsLabel.text = f'Steps: {self.steps}'
         
+    def togglePause(self, instance = None):
+        self.pause = not self.pause
+        
+    def update_rows_cols(self,rows,cols, *args):
+        self.rows = rows
+        self.cols = cols
+        
+        self.tiles = [[None for j in range(self.cols)] for i in range(self.rows)]
+        
+        self.clear_widgets()
+        
+        for i in range(self.rows):
+            for j in range(self.cols):
+                self.tiles[i][j] = Tile()
+                self.add_widget(self.tiles[i][j])
+        
+        self.__render()

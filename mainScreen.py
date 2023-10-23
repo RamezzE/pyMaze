@@ -6,42 +6,87 @@ from kivy.core.window import Window
 from kivy.uix.label import Label
 from kivy.uix.checkbox import CheckBox
 from functools import partial
+from kivy.uix.slider import Slider
 from kivy.graphics.context_instructions import Color
 
 class MainScreen(Widget):
     def __init__(self, **kwargs):
         
-        self.Maze = Maze(10,10)
-        print("Self  ", self.size)
-        # self.Maze.resize(self.size)
-        self.Maze.resize((Window.width* 0.75,Window.height))
+        self.Maze = Maze(1,1)
+        self.Maze.resize((Window.height,Window.height))
+        Window.bind(on_resize=lambda window, width, height: self.Maze.resize((height, height)))
         self.currentAlgorithm = "DFS"
         
         self.textColor = (231/255, 157/255, 86/255,1)
         self.buttonBackgroundColor = (40/255, 90/255, 107/255,1)
-                
+        
         self.__initButtons()
         
         self.root = BoxLayout(orientation='horizontal')
         self.root.add_widget(self.Maze)
         self.root.add_widget(self.buttonsBox)
         
-        Window.clearcolor = (0.3, 0.3, 0.3, 1)
+        Window.clearcolor = (0.2, 0.2, 0.2, 1)
         
+    def __initSliders(self):
+        self.sliders = []
+        for i in range(2):
+            self.sliders.append(Slider(min = 1, max = 20, step = 1))    
+            self.sliders[i].bind(value=lambda instance, value, i=i: self.on_slider_value(instance, value, i))
+            
+        self.sliders[0].value = self.Maze.rows
+        self.sliders[1].value = self.Maze.cols
+        
+        self.sliderLabels = []
+        for i in range (len(self.sliders)):
+            self.sliderLabels.append(Label())
+            
+        self.sliderLabels[0].text = "Rows: " + str(self.Maze.rows)
+        self.sliderLabels[1].text = "Cols: " + str(self.Maze.cols)
+        
+        self.slidersBox = BoxLayout(orientation = "vertical")
+        
+        hbox = BoxLayout(orientation = "horizontal")
+        
+        hbox.add_widget(self.sliderLabels[0])
+        hbox.add_widget(self.sliders[0])
+        
+        self.slidersBox.add_widget(hbox)
+        
+        hbox = BoxLayout(orientation = "horizontal")
+        
+        hbox.add_widget(self.sliderLabels[1])
+        hbox.add_widget(self.sliders[1])
+        
+        self.slidersBox.add_widget(hbox)
+        
+        
+    def on_slider_value(self, instance, value, i):
+        try:
+            if i == 0:
+                self.sliderLabels[i].text = f"Rows: {int(value)}"
+            else:
+                self.sliderLabels[i].text = f"Cols: {int(value)}"
+        except:
+            pass
+
     def __initButtons(self):
         self.buttons = []
-        for i in range(2):
+        for i in range(5):
             self.buttons.append(Button())
         
         self.buttons[0].text = "Generate Maze"
         self.buttons[1].text = "Solve Maze"
+        self.buttons[2].text = "Pause"
+        self.buttons[3].text = "Continue"
+        self.buttons[4].text = "Apply"
+        
         
         self.buttons[0].bind(on_release=self.Maze.generateMaze)
         self.buttons[1].bind(on_release=self.Maze.solveMaze)
         
-        self.buttonsBox = BoxLayout(orientation='vertical')
-        self.buttonsBox.size_hint_max = (Window.width/4, Window.height/4)
-        self.buttonsBox.padding = 10
+        self.buttonsBox = BoxLayout(orientation='vertical',padding = 10, spacing = 2)
+        # self.buttonsBox.size_hint_max = (Window.width/4, Window.height/4)
                 
         self.stepsLabel =  Label(text=f'Steps: {self.Maze.steps}')
         self.stepsLabel.color = self.textColor
@@ -50,15 +95,33 @@ class MainScreen(Widget):
         
         self.Maze.initLabels(self.stepsLabel)
         
+        for i in range(2):
+            self.buttonsBox.add_widget(self.buttons[i])
+            self.buttons[i].size_hint_max = (self.buttons[i].parent.width, self.buttons[i].parent.height/2)
+            
+        self.pause_continue_button_box = BoxLayout(orientation = "horizontal", spacing = self.buttonsBox.spacing)
+
+        for i in range(2,4):
+            self.pause_continue_button_box.add_widget(self.buttons[i])
+            self.buttons[i].size_hint_y = None
+            self.buttons[i].height = self.buttons[i-2].height
+            self.buttons[i].bind(on_release = self.Maze.togglePause)
+        
         for button in self.buttons:
-            self.buttonsBox.add_widget(button)
-            button.size_hint_max = (button.parent.width, button.parent.height/2)
-            button.margin = 10
+            # button.margin = 10
             button.color = self.textColor
             button.background_color = self.buttonBackgroundColor
+            
 
         self.__initRadioButtons()
-        self.buttonsBox.add_widget(self.radioButtonsBox)
+        self.buttonsBox.add_widget(self.radioButtonsBox)    
+        self.buttonsBox.add_widget(self.pause_continue_button_box)
+        
+        self.__initSliders()
+        self.buttons[4].bind(on_release=lambda button: self.Maze.update_rows_cols(int(self.sliders[0].value), int(self.sliders[1].value)))
+
+        self.slidersBox.add_widget(self.buttons[4])
+        self.buttonsBox.add_widget(self.slidersBox)
         
         self.buttonsBox.canvas.add(Color(rgba=self.textColor))
             

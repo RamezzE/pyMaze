@@ -3,68 +3,54 @@ from kivy.graphics import Rectangle, Line
 from kivy.graphics.context_instructions import Color
 
 class Tile(Widget):
-    def __init__(self, width, height, **kwargs):
+    def __init__(self,**kwargs):
         super(Tile, self).__init__(**kwargs)
-        self.size = (width, height)
         self.color = (1, 1, 1, 1)
-
         self.borders = [True, True]
         self.borderColor = (0, 0, 0, 1)
-        self.rightBorder = self.topBorder = None
         self.borderWidth = 1
+        
+        self.bind(pos = self.render)
+        self.bind(size = self.render)
 
-        self.render()
-
-    def render(self):
+    def render(self, *args):
         self.canvas.clear()
         with self.canvas:
             Color(*self.color)
             Rectangle(pos=self.pos, size=self.size)
 
-            self.renderBorders()
+        self.renderBorders()
 
     def renderBorders(self):
         # top border
-        if self.topBorder is not None:
-            self.canvas.remove(self.topBorder)
-            
         if self.borders[0] == True:
             with self.canvas:
                 Color(*self.borderColor)
                 Line(
                     points=[
-                        self.pos[0], self.pos[1] + self.size[1],
-                        self.pos[0] + self.size[0], + self.size[1] + self.pos[1]
+                        self.pos[0], self.pos[1] + self.height,
+                        self.pos[0] + self.width, + self.height + self.pos[1]
                     ],
                     width=self.borderWidth,
                 )
 
         # right Border
-        if self.rightBorder is not None:
-            self.canvas.remove(self.rightBorder)
-            
         if self.borders[1] == True:
             with self.canvas:
                 Color(*self.borderColor)
                 Line(
                     points=[
-                        self.pos[0] + self.size[0], self.pos[1],
-                        self.pos[0] + self.size[0], self.pos[1] + self.size[1]
+                        self.pos[0] + self.width, self.pos[1],
+                        self.pos[0] + self.width, self.pos[1] + self.height
                     ],
                     width=self.borderWidth,
                 )
 
-        
-    def setPosition(self, x, y):
-        self.pos = (x, y)
-        self.render()
-
     def getPosition(self):
         return self.pos
 
-    def setSize(self, width, height):
+    def setSize(self, width, height, instance = None):
         self.size = (width, height)
-        self.render()
 
     def getSize(self):
         return self.size
