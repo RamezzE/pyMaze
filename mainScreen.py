@@ -12,12 +12,13 @@ from kivy.graphics.context_instructions import Color
 class MainScreen(Widget):
     def __init__(self, **kwargs):
         
-        self.Maze = Maze(1,1)
+        self.Maze = Maze(5,5)
         self.Maze.resize((Window.height,Window.height))
         Window.bind(on_resize=lambda window, width, height: self.Maze.resize((height, height)))
         self.currentAlgorithm = "DFS"
         
-        self.textColor = (231/255, 157/255, 86/255,1)
+        # self.textColor = (231/255, 157/255, 86/255,1)
+        self.textColor = (1,1,1,1)
         self.buttonBackgroundColor = (40/255, 90/255, 107/255,1)
         
         self.__initButtons()
@@ -72,55 +73,68 @@ class MainScreen(Widget):
 
     def __initButtons(self):
         self.buttons = []
-        for i in range(5):
+        for i in range(7):
             self.buttons.append(Button())
         
         self.buttons[0].text = "Generate Maze"
         self.buttons[1].text = "Solve Maze"
         self.buttons[2].text = "Pause"
         self.buttons[3].text = "Continue"
-        self.buttons[4].text = "Apply"
+        self.buttons[4].text = "Choose Start"
+        self.buttons[5].text = "Choose End"
+        self.buttons[6].text = "Apply"
         
         
         self.buttons[0].bind(on_release=self.Maze.generateMaze)
         self.buttons[1].bind(on_release=self.Maze.solveMaze)
         
+        self.buttons[4].bind(on_release=lambda *args: setattr(self.Maze, 'chooseStart', True))  
+        self.buttons[5].bind(on_release=lambda *args: setattr(self.Maze, 'chooseEnd', True))  
+              
         self.buttonsBox = BoxLayout(orientation='vertical',padding = 10, spacing = 2)
-        # self.buttonsBox.size_hint_max = (Window.width/4, Window.height/4)
+        
                 
-        self.stepsLabel =  Label(text=f'Steps: {self.Maze.steps}')
-        self.stepsLabel.color = self.textColor
+        stepsLabel =  Label(text=f'Steps: {self.Maze.steps}')
+        stepsLabel.color = self.textColor
         
-        self.buttonsBox.add_widget(self.stepsLabel)
+        self.buttonsBox.add_widget(stepsLabel)
         
-        self.Maze.initLabels(self.stepsLabel)
+        self.Maze.initLabels(stepsLabel)
         
         for i in range(2):
             self.buttonsBox.add_widget(self.buttons[i])
             self.buttons[i].size_hint_max = (self.buttons[i].parent.width, self.buttons[i].parent.height/2)
             
-        self.pause_continue_button_box = BoxLayout(orientation = "horizontal", spacing = self.buttonsBox.spacing)
-
+        pause_continue_button_box = BoxLayout(orientation = "horizontal", spacing = self.buttonsBox.spacing)
+        
         for i in range(2,4):
-            self.pause_continue_button_box.add_widget(self.buttons[i])
+            pause_continue_button_box.add_widget(self.buttons[i])
             self.buttons[i].size_hint_y = None
             self.buttons[i].height = self.buttons[i-2].height
             self.buttons[i].bind(on_release = self.Maze.togglePause)
+            
+        for i in range(4,6):
+            self.buttons[i].size_hint_y = None
+            self.buttons[i].height = self.buttons[i-2].height
         
         for button in self.buttons:
-            # button.margin = 10
             button.color = self.textColor
             button.background_color = self.buttonBackgroundColor
             
+        hbox = BoxLayout(orientation = "horizontal")
+
+        hbox.add_widget(self.buttons[4])
+        hbox.add_widget(self.buttons[5])
 
         self.__initRadioButtons()
         self.buttonsBox.add_widget(self.radioButtonsBox)    
-        self.buttonsBox.add_widget(self.pause_continue_button_box)
+        self.buttonsBox.add_widget(pause_continue_button_box)
+        self.buttonsBox.add_widget(hbox)
         
         self.__initSliders()
-        self.buttons[4].bind(on_release=lambda button: self.Maze.update_rows_cols(int(self.sliders[0].value), int(self.sliders[1].value)))
+        self.buttons[6].bind(on_release=lambda button: self.Maze.update_rows_cols(int(self.sliders[0].value), int(self.sliders[1].value)))
 
-        self.slidersBox.add_widget(self.buttons[4])
+        self.slidersBox.add_widget(self.buttons[6])
         self.buttonsBox.add_widget(self.slidersBox)
         
         self.buttonsBox.canvas.add(Color(rgba=self.textColor))

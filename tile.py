@@ -5,6 +5,7 @@ from kivy.graphics.context_instructions import Color
 class Tile(Widget):
     def __init__(self,**kwargs):
         super(Tile, self).__init__(**kwargs)
+        
         self.color = (1, 1, 1, 1)
         self.borders = [True, True]
         self.borderColor = (0, 0, 0, 1)
@@ -73,3 +74,24 @@ class Tile(Widget):
 
     def getBorders(self):
         return self.borders
+    
+    def getIndex(self):
+        num = self.parent.children.index(self)
+        num = self.parent.rows*self.parent.cols - num - 1
+        
+        i = num//self.parent.cols
+        j = num % self.parent.cols
+        return [i,j]
+    
+    def on_touch_down(self, touch):
+        if self.parent.chooseEnd == True:
+            if self.collide_point(*touch.pos):
+                self.parent.chooseEnd = False
+                self.parent.changeGoal(self.getIndex())
+                
+        elif self.parent.chooseStart == True:
+            if self.collide_point(*touch.pos):
+                self.parent.chooseStart = False
+                self.parent.changeStart(self.getIndex())
+            
+                

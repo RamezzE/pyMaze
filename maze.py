@@ -5,8 +5,6 @@ import random
 from kivy.clock import Clock
 from functools import partial
 from collections import deque
-from kivy.core.window import Window
-from kivy.uix.label import Label
 
 from tile import Tile
 
@@ -22,6 +20,9 @@ class Maze(GridLayout):
         self.playerColor = (116/255, 133/255, 101/255,1)     
         
         self.currentPos = (0,0)
+        self.startPos = [0,0]
+        self.goalColor = (0,1,0,1)
+        self.goalPos = [self.rows - 1, self.cols - 1]
         
         self.defaultColor = (1,1,1,1)
         self.defaultBorderColor = (0,0,0,1)
@@ -33,7 +34,7 @@ class Maze(GridLayout):
         self.currentAlgorithm = "DFS"
         
         self.steps = 0
-        self.pause = self.isGenerated = False
+        self.pause = self.isGenerated = self.chooseStart = self.chooseEnd = False
         
         self.update_rows_cols(self.rows,self.cols)
         
@@ -67,15 +68,18 @@ class Maze(GridLayout):
     def resize(self, size, *args):
         self.size_hint = (None, None)
         self.size = size
-        # self.__render()
-        
      
     def __resetColors(self):
         for i in range(self.rows):
             for j in range(self.cols):
                 self.tiles[i][j].setColor(self.tileColor)
+   
+        i,j = self.goalPos
+        self.tiles[i][j].setColor(self.goalColor)             
                         
-    def __clearMaze(self):        
+    def __clearMaze(self):     
+        self.isGenerated = False
+   
         for i in range(self.rows):
             for j in range(self.cols):
                 self.tiles[i][j].setColor(self.defaultColor)
@@ -108,6 +112,11 @@ class Maze(GridLayout):
         self.stepsLabel.text = f'Steps: {self.steps}'
         
         if len(stack) == 0:
+            self.isGenerated = True
+            i,j = self.goalPos
+            self.tiles[i][j].setColor(self.goalColor)
+            self.currentPos = self.startPos
+            self.__renderPlayer()
             return
         
         i, j = stack[-1]
@@ -214,25 +223,21 @@ class Maze(GridLayout):
 
         return neighbors
     
-    def solve_DFS(self, instance = None):
-                
+    def solve_DFS(self, instance = None):        
+        
         self.steps = 0
         self.stepsLabel.text = f'Steps: {self.steps}'
 
-        # Get the starting point & Goal
-        start = [0,0]
-        goal = [self.rows - 1, self.cols - 1]
-
         # Create a stack for DFS
         stack = []
-        stack.append(start)
+        stack.append(self.startPos)
         
         # Create a visited array
         visited = [[False for i in range(self.cols)] for j in range(self.rows)]
         
         self.__resetColors()
 
-        self.__solve_DFS_Step(stack, visited, goal)
+        self.__solve_DFS_Step(stack, visited, self.goalPos)
         
     def __solve_DFS_Step(self, stack, visited, goal, instance = None):
             
@@ -314,13 +319,9 @@ class Maze(GridLayout):
         self.steps = 0
         self.stepsLabel.text = f'Steps: {self.steps}'
 
-        # Get the starting point & Goal
-        start = [0,0]
-        goal = [self.rows - 1, self.cols - 1]
-
         # Create a queue for BFS
         deque_BFS = deque()
-        deque_BFS.append(start)
+        deque_BFS.append(self.startPos)
         
         # Creating a visited array
         visited =[[False for i in range(self.cols)] for j in range(self.rows)]
@@ -330,7 +331,7 @@ class Maze(GridLayout):
         
         self.__resetColors()
 
-        self.__solve_BFS_Step(deque_BFS, visited, goal, parent)
+        self.__solve_BFS_Step(deque_BFS, visited, self.goalPos, parent)
         
     def __solve_BFS_Step(self, deque, visited, goal, parent, instance = None):
                       
@@ -382,6 +383,10 @@ class Maze(GridLayout):
         self.currentAlgorithm = algorithm 
         
     def solveMaze(self, instance = None):
+        
+        if not self.isGenerated:
+            return
+        
         if self.currentAlgorithm == "DFS":
             self.solve_DFS()        
         else:
@@ -395,12 +400,12 @@ class Maze(GridLayout):
         self.pause = not self.pause
         
     def update_rows_cols(self,rows,cols, *args):
+        self.clear_widgets()
+        
         self.rows = rows
         self.cols = cols
         
         self.tiles = [[None for j in range(self.cols)] for i in range(self.rows)]
-        
-        self.clear_widgets()
         
         for i in range(self.rows):
             for j in range(self.cols):
@@ -408,3 +413,14 @@ class Maze(GridLayout):
                 self.add_widget(self.tiles[i][j])
         
         self.__render()
+        
+    def changeGoal(self, newGoal):
+        self.goalPos = newGoal
+        self.__resetColors()
+        
+    def changeStart(self, newStart):
+        self.startPos = newStart
+        self.currentPos = newStart
+        self.startPos = newStart
+        self.__resetColors()
+        self.__renderPlayer()
