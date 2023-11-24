@@ -2,7 +2,7 @@ from kivy.uix.gridlayout import GridLayout
 from kivy.graphics import Rectangle
 from kivy.graphics.context_instructions import Color
 
-from tile import Tile
+from views.tile_view import TileView
 
 class MazeView(GridLayout):
     def __init__(self, mazeModel, tileOnTouch, **kwargs):
@@ -121,7 +121,7 @@ class MazeView(GridLayout):
         
         for i in range(self.mazeModel.rows):
             for j in range(self.mazeModel.cols):
-                self._tiles[i][j] = Tile(self.tileOnTouch)
+                self._tiles[i][j] = TileView(self.tileOnTouch)
                 self.add_widget(self._tiles[i][j])
         try:
             for i in range(1, 6):

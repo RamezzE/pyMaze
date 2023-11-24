@@ -1,5 +1,5 @@
 from kivy.app import App
-from mainScreen import MainScreen
+from views.mainScreen_view import MainScreen
 
 class MazeApp(App):
     def build(self):

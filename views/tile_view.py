@@ -2,9 +2,9 @@ from kivy.uix.widget import Widget
 from kivy.graphics import Rectangle, Line
 from kivy.graphics.context_instructions import Color
 
-class Tile(Widget):
+class TileView(Widget):
     def __init__(self, onTouch, **kwargs):
-        super(Tile, self).__init__(**kwargs)
+        super(TileView, self).__init__(**kwargs)
         
         self.color = (1, 1, 1, 1)
         self.borders = [True, True]
