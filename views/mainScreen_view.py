@@ -98,7 +98,7 @@ class MainScreen(Widget):
         
         self.buttonsBox = BoxLayout(orientation='vertical',padding = 10, spacing = 2)
         
-        stepsLabel =  Label()
+        stepsLabel =  Label(text = "Steps: 0")
         stepsLabel.color = self.textColor
         
         self.buttonsBox.add_widget(stepsLabel)

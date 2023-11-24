@@ -414,11 +414,11 @@ class MazeController:
         
     def __incrementSteps(self):
         self.steps += 1
-        self.mazeView.updateStepsLabel(f'Steps: {self.steps}')
+        self.mazeView.updateStepsLabel(self.steps)
         
     def __resetSteps(self):
         self.steps = 0
-        self.mazeView.updateStepsLabel(f'Steps: {self.steps}')
+        self.mazeView.updateStepsLabel(self.steps)
         
     def getView(self):
         return self.mazeView
