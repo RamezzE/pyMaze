@@ -8,20 +8,16 @@ from functools import partial
 from kivy.uix.slider import Slider
 from kivy.graphics.context_instructions import Color
 
-from maze import Maze
 from controllers.maze_controller import MazeController
 
 class MainScreen(Widget):
     def __init__(self, **kwargs):
         self.buttons = []
+        self.rows = 5
+        self.cols = 5
         
-        self.Maze = Maze(5,5, self.buttons)
-        self.Maze.resize((Window.height,Window.height))
-        
-        self.mazeController = MazeController(self.Maze)
-        
-        Window.bind(on_resize=lambda window, width, height: self.Maze.resize((height, height)))
-        self.currentAlgorithm = "DFS"
+        self.mazeController = MazeController(self.rows,self.cols)
+        self.mazeController.linkButtons(self.buttons)
         
         # self.textColor = (231/255, 157/255, 86/255,1)
         self.textColor = (1,1,1,1)
@@ -30,7 +26,7 @@ class MainScreen(Widget):
         self.__initButtons()
         
         self.root = BoxLayout(orientation='horizontal')
-        self.root.add_widget(self.Maze)
+        self.root.add_widget(self.mazeController.getView())
         self.root.add_widget(self.buttonsBox)
         
         Window.clearcolor = (0.2, 0.2, 0.2, 1)
@@ -39,17 +35,17 @@ class MainScreen(Widget):
         self.sliders = []
         for i in range(2):
             self.sliders.append(Slider(min = 1, max = 40, step = 1))    
-            self.sliders[i].bind(value=lambda instance, value, i=i: self.on_slider_value(instance, value, i))
-            
-        self.sliders[0].value = self.Maze.rows
-        self.sliders[1].value = self.Maze.cols
+            self.sliders[i].bind(value=lambda instance, value, i=i: self.__on_slider_value(instance, value, i))
+        
+        self.sliders[0].value = self.rows
+        self.sliders[1].value = self.cols
         
         self.sliderLabels = []
         for i in range (len(self.sliders)):
             self.sliderLabels.append(Label())
             
-        self.sliderLabels[0].text = "Rows: " + str(self.Maze.rows)
-        self.sliderLabels[1].text = "Cols: " + str(self.Maze.cols)
+        self.sliderLabels[0].text = "Rows: " + str(self.rows)
+        self.sliderLabels[1].text = "Cols: " + str(self.cols)
         
         self.slidersBox = BoxLayout(orientation = "vertical")
         
@@ -67,7 +63,7 @@ class MainScreen(Widget):
         
         self.slidersBox.add_widget(hbox)
           
-    def on_slider_value(self, instance, value, i):
+    def __on_slider_value(self, instance, value, i):
         try:
             if i == 0:
                 self.sliderLabels[i].text = f"Rows: {int(value)}"
@@ -97,20 +93,17 @@ class MainScreen(Widget):
         self.buttons[0].bind(on_release=self.mazeController.generateMaze)
         self.buttons[1].bind(on_release=self.mazeController.solveMaze)
         
-        # self.buttons[4].bind(on_release=lambda *args: setattr(self.Maze, 'chooseStart', True))
-        # self.buttons[5].bind(on_release=lambda *args: setattr(self.Maze, 'chooseEnd', True))  
-        
         self.buttons[4].bind(on_release=self.mazeController.toggleChangeMazeStart)  
         self.buttons[5].bind(on_release=self.mazeController.toggleChangeMazeEnd)  
         
         self.buttonsBox = BoxLayout(orientation='vertical',padding = 10, spacing = 2)
         
-        stepsLabel =  Label(text=f'Steps: {self.mazeController.steps}')
+        stepsLabel =  Label()
         stepsLabel.color = self.textColor
         
         self.buttonsBox.add_widget(stepsLabel)
         
-        self.Maze.initLabels(stepsLabel)
+        self.mazeController.mazeView.initLabels(stepsLabel)
         
         for i in range(2):
             self.buttonsBox.add_widget(self.buttons[i])
@@ -139,7 +132,7 @@ class MainScreen(Widget):
         speedHbox.add_widget(self.sliderLabels[2])
         
         self.sliders.append(Slider(min = 1, max = 10, value = 1, step = 0.5))
-        self.sliders[2].bind(value=lambda instance, value, i=2: self.on_slider_value(instance, value, i))
+        self.sliders[2].bind(value=lambda instance, value, i=2: self.__on_slider_value(instance, value, i))
 
         speedHbox.add_widget(self.sliders[2])
             
@@ -154,7 +147,7 @@ class MainScreen(Widget):
         self.buttonsBox.add_widget(speedHbox)
         self.buttonsBox.add_widget(hbox)
         
-        self.buttons[6].bind(on_release=lambda button: MazeController.update_rows_cols(self.Maze,int(self.sliders[0].value), int(self.sliders[1].value)))
+        self.buttons[6].bind(on_release=lambda button: MazeController.update_rows_cols(self.mazeController.mazeView,int(self.sliders[0].value), int(self.sliders[1].value)))
 
         self.slidersBox.add_widget(self.buttons[6])
         self.buttonsBox.add_widget(self.slidersBox)

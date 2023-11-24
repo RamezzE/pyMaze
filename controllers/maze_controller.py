@@ -1,54 +1,51 @@
 import random
+from kivy.core.window import Window
 from kivy.clock import Clock
 from functools import partial
 from collections import deque
 
-from tile import Tile
+from controllers.tile_controller import TileController
+from models.maze_model import MazeModel
+from views.maze_view import MazeView
 
 class MazeController:
-    def __init__(self, maze):
-        self.maze = maze
+    def __init__(self, rows, cols):
+        
+
+        self.pause = self.isGenerated = self.chooseStart = self.chooseEnd = False
+        self.currentAlgorithm = "DFS"
 
         self.speed = 0.1
         self.steps = 0
-
-        self.pause = self.isGenerated = False
         
-        self.currentAlgorithm = "DFS"
+        self.mazeModel = MazeModel(rows=rows, cols=cols)
+        self.tileController = TileController(self)
+        self.mazeView = MazeView(self.mazeModel, self.tileController.on_touch_down)
+
+        self.mazeView.resize((Window.height, Window.height))
+        Window.bind(on_resize=lambda window, width,
+                    height: self.mazeView.resize((height, height)))
 
     def __clearMaze(self):
-        maze = self.maze
         self.isGenerated = False
-
-        for i in range(1, 6):
-            maze.buttons[i].disabled = True
-
-        for i in range(maze.rows):
-            for j in range(maze.cols):
-                maze.tiles[i][j].setColor(maze.defaultColor)
-                maze.tiles[i][j].borderColor = maze.defaultBorderColor
-                maze.tiles[i][j].setBorders(0, True)
-                maze.tiles[i][j].setBorders(1, True)
+        self.mazeView.clearMaze()
 
     def generateMaze(self, *args):
-        maze = self.maze
 
         self.__clearMaze()
 
-        maze.steps = 0
-        maze.stepsLabel.text = f'Steps: {self.steps}'
+        self.__resetSteps()
 
-        # Randomize starting point of maze generation
+        # Randomize starting point of mazeView generation
+        i = random.randint(0, self.mazeModel.rows - 1)
+        j = random.randint(0, self.mazeModel.cols - 1)
 
-        i = random.randint(0, maze.rows - 1)
-        j = random.randint(0, maze.cols - 1)
-
-        visited = [[False for i in range(maze.cols)] for j in range(maze.rows)]
+        visited = [[False for i in range(self.mazeModel.cols)]
+                   for j in range(self.mazeModel.rows)]
         stack = [[i, j]]
 
-        maze.buttons[2].disabled = False
-        maze.buttons[6].disabled = True
-
+        self.mazeView.enableButtons([2,6])
+        
         self.__generateMazeStep(stack, visited)
 
     def __generateMazeStep(self, stack, visited, *args):
@@ -58,23 +55,17 @@ class MazeController:
                 partial(self.__generateMazeStep, stack, visited), self.speed)
             return
 
-        maze = self.maze
-
-        self.steps += 1
-        maze.stepsLabel.text = f'Steps: {self.steps}'
+        self.__incrementSteps()
 
         if len(stack) == 0:
             self.isGenerated = True
-            i, j = maze.goalPos
-            maze.tiles[i][j].setColor(maze.goalColor)
-            maze.currentPos = maze.startPos
-            maze._renderPlayer()
 
-            maze.buttons[1].disabled = False
-            maze.buttons[4].disabled = False
-            maze.buttons[5].disabled = False
-            maze.buttons[6].disabled = False
+            self.mazeView.colorGoal()
 
+            self.mazeModel.setCurrentPos(self.mazeModel.getStartPos())
+            self.mazeView.renderPlayer()
+
+            self.mazeView.enableButtons([1, 4, 5, 6])
             return
 
         i, j = stack[-1]
@@ -82,12 +73,12 @@ class MazeController:
         # Mark the current cell as visited
         visited[i][j] = True
 
-        maze.tiles[i][j].setColor(maze.tileColor)
-        maze.tiles[i][j].setBorderColor(maze.borderColor)
+        self.mazeView.colorTile(i, j)
+        self.mazeView.colorBorder(i, j)
 
         # Update player position on screen
-        maze.currentPos = [i, j]
-        maze._renderPlayer()
+        self.mazeModel.setCurrentPos([i, j])
+        self.mazeView.renderPlayer()
 
         # Get the unvisited neighbours of the current cell
         neighbours_unvisited = self.__neighbours_unvisited(i, j, visited)
@@ -111,12 +102,10 @@ class MazeController:
             partial(self.__generateMazeStep, stack, visited), self.speed)
 
     def __neighbours_unvisited(self, i, j, visited):
-        maze = self.maze
-        
         neighbors = []
 
         # Check the bottom neighbor
-        if i + 1 < maze.rows and not visited[i + 1][j]:
+        if i + 1 < self.mazeModel.rows and not visited[i + 1][j]:
             neighbors.append([i + 1, j])
 
         # Check the top neighbor
@@ -124,7 +113,7 @@ class MazeController:
             neighbors.append([i - 1, j])
 
         # Check the right neighbor
-        if j + 1 < maze.cols and not visited[i][j + 1]:
+        if j + 1 < self.mazeModel.cols and not visited[i][j + 1]:
             neighbors.append([i, j + 1])
 
         # Check the left neighbor
@@ -134,28 +123,26 @@ class MazeController:
         return neighbors
 
     def __neighbours_unvisited_BFS(self, i, j, visited):
-        maze = self.maze
-        
         neighbors = []
 
         # Check the left neighbor
         if j - 1 >= 0 and not visited[i][j - 1]:
-            if not maze.tiles[i][j-1].borders[1]:
+            if not self.mazeView.getBorder(i, j-1, 1):
                 neighbors.append([i, j - 1])
-            
+
         # Check the top neighbor
         if i - 1 >= 0 and not visited[i - 1][j]:
-            if not maze.tiles[i][j].borders[0]:
+            if not self.mazeView.getBorder(i, j, 0):
                 neighbors.append([i - 1, j])
-            
+
         # Check the right neighbor
-        if j + 1 < maze.cols and not visited[i][j + 1]:
-            if not maze.tiles[i][j].borders[1]:
+        if j + 1 < self.mazeModel.cols and not visited[i][j + 1]:
+            if not self.mazeView.getBorder(i, j, 1):
                 neighbors.append([i, j + 1])
-            
+
         # Check the bottom neighbor
-        if i + 1 < maze.rows and not visited[i + 1][j]:
-            if not maze.tiles[i+1][j].borders[0]:
+        if i + 1 < self.mazeModel.rows and not visited[i + 1][j]:
+            if not self.mazeView.getBorder(i+1, j, 0):
                 neighbors.append([i + 1, j])
 
         return neighbors
@@ -165,10 +152,7 @@ class MazeController:
         if not self.isGenerated:
             return
 
-        maze = self.maze
-
-        maze.buttons[0].disabled = True
-        maze.buttons[6].disabled = True
+        self.mazeView.disableButtons([0, 6])
 
         if self.currentAlgorithm == "DFS":
             self.solve_DFS()
@@ -177,21 +161,19 @@ class MazeController:
 
     def solve_DFS(self, *args):
 
-        maze = self.maze
-
-        self.steps = 0
-        maze.stepsLabel.text = f'Steps: {self.steps}'
+        self.__resetSteps()
 
         # Create a stack for DFS
         stack = []
-        stack.append(maze.startPos)
+        stack.append(self.mazeModel.getStartPos())
 
         # Create a visited array
-        visited = [[False for i in range(maze.cols)] for j in range(maze.rows)]
+        visited = [[False for i in range(self.mazeModel.cols)]
+                   for j in range(self.mazeModel.rows)]
 
-        maze._resetColors()
+        self.mazeView._resetColors()
 
-        self.__solve_DFS_Step(stack, visited, maze.goalPos)
+        self.__solve_DFS_Step(stack, visited, self.mazeModel.getGoalPos())
 
     def __solve_DFS_Step(self, stack, visited, goal, *args):
 
@@ -200,10 +182,7 @@ class MazeController:
                 partial(self.__solve_DFS_Step, stack, visited, goal), self.speed)
             return
 
-        maze = self.maze
-
-        self.steps += 1
-        maze.stepsLabel.text = f'Steps: {self.steps}'
+        self.__incrementSteps()
 
         if len(stack) == 0:
             print("No Solution")
@@ -211,10 +190,10 @@ class MazeController:
 
         i, j = stack[-1]
         visited[i][j] = True
-        maze.tiles[i][j].setColor(maze.visitedColor)
 
-        maze.currentPos = stack[-1]
-        maze._renderPlayer()
+        self.mazeView.markAsVisited(i, j)
+        self.mazeModel.setCurrentPos(stack[-1])
+        self.mazeView.renderPlayer()
 
         if stack[-1] == goal:
             # Reached Goal
@@ -224,7 +203,7 @@ class MazeController:
         # Check the left cell
         if j - 1 >= 0 and not visited[i][j - 1]:
             # Left Wall Check
-            if not maze.tiles[i][j-1].borders[1]:
+            if not self.mazeView.getBorder(i, j-1, 1):
                 # We can go left
                 stack.append([i, j - 1])
                 Clock.schedule_once(
@@ -234,7 +213,7 @@ class MazeController:
         # Check the top cell
         if i - 1 >= 0 and not visited[i - 1][j]:
             # Top Wall Check
-            if not maze.tiles[i][j].borders[0]:
+            if not self.mazeView.getBorder(i, j, 0):
                 # We can go top
                 stack.append([i - 1, j])
                 Clock.schedule_once(
@@ -242,9 +221,9 @@ class MazeController:
                 return
 
         # Check the right cell
-        if j + 1 < maze.cols and not visited[i][j + 1]:
+        if j + 1 < self.mazeModel.cols and not visited[i][j + 1]:
             # Right Wall Check
-            if not maze.tiles[i][j].borders[1]:
+            if not self.mazeView.getBorder(i, j, 1):
                 # We can go right
                 stack.append([i, j + 1])
                 Clock.schedule_once(
@@ -252,9 +231,9 @@ class MazeController:
                 return
 
         # Check the bottom cell
-        if i + 1 < maze.rows and not visited[i + 1][j]:
+        if i + 1 < self.mazeModel.rows and not visited[i + 1][j]:
             # Bottom Wall Check
-            if not maze.tiles[i+1][j].borders[0]:
+            if not self.mazeView.getBorder(i+1, j, 0):
                 # We can go bottom
                 stack.append([i + 1, j])
                 Clock.schedule_once(
@@ -266,26 +245,26 @@ class MazeController:
         Clock.schedule_once(partial(self.__solve_DFS_Step,
                             stack, visited, goal), self.speed)
 
-    def solve_BFS(self, instance=None):
+    def solve_BFS(self, *args):
 
-        maze = self.maze
-
-        self.steps = 0
-        maze.stepsLabel.text = f'Steps: {self.steps}'
+        self.__resetSteps()
 
         # Create a queue for BFS
         deque_BFS = deque()
-        deque_BFS.append(maze.startPos)
+        deque_BFS.append(self.mazeModel.getStartPos())
 
         # Creating a visited array
-        visited = [[False for i in range(maze.cols)] for j in range(maze.rows)]
+        visited = [[False for i in range(self.mazeModel.cols)]
+                   for j in range(self.mazeModel.rows)]
 
         # Creating a parent array to track correct path
-        parent = [[None for i in range(maze.cols)] for j in range(maze.rows)]
+        parent = [[None for i in range(self.mazeModel.cols)]
+                  for j in range(self.mazeModel.rows)]
 
-        maze._resetColors()
+        self.mazeView._resetColors()
 
-        self.__solve_BFS_Step(deque_BFS, visited, maze.goalPos, parent)
+        self.__solve_BFS_Step(deque_BFS, visited,
+                              self.mazeModel.getGoalPos(), parent)
 
     def __solve_BFS_Step(self, deque, visited, goal, parent, *args):
 
@@ -294,10 +273,7 @@ class MazeController:
                 partial(self.__solve_BFS_Step, deque, visited, goal, parent), self.speed)
             return
 
-        maze = self.maze
-
-        self.steps += 1
-        maze.stepsLabel.text = f'Steps: {self.steps}'
+        self.__incrementSteps()
 
         if len(deque) == 0:
             print("No Solution")
@@ -306,10 +282,10 @@ class MazeController:
         i, j = deque[0]
         deque.popleft()
         visited[i][j] = True
-        maze.tiles[i][j].setColor(maze.visitedColor)
+        self.mazeView.markAsVisited(i,j)
 
-        maze.currentPos = [i, j]
-        maze._renderPlayer()
+        self.mazeModel.setCurrentPos([i, j])
+        self.mazeView.renderPlayer()
 
         if [i, j] == goal:
             # Reached Goal
@@ -327,100 +303,79 @@ class MazeController:
 
     def __backTrackPath_DFS(self, stack, *args):
 
-        maze = self.maze
-
         if len(stack) == 0:
-            maze.buttons[0].disabled = False
-            maze.buttons[4].disabled = False
-            maze.buttons[5].disabled = False
-            maze.buttons[6].disabled = False
+            self.mazeView.enableButtons([0, 4, 5, 6])
             return
 
         i, j = stack[-1]
-        maze.tiles[i][j].setColor(maze.correctPathColor)
+        self.mazeView.markAsCorrectPath(i,j)
         stack.pop()
         Clock.schedule_once(
             partial(self.__backTrackPath_DFS, stack), self.speed)
 
     def __backTrackPath_BFS(self, goal, parent, *args):
         i, j = goal
-        
-        maze = self.maze
 
         if parent[i][j] is None:
-            maze.buttons[0].disabled = False
-            maze.buttons[4].disabled = False
-            maze.buttons[5].disabled = False
-            maze.buttons[6].disabled = False
+            self.mazeView.enableButtons([0, 4, 5, 6])
             return
 
-        maze.tiles[i][j].setColor(maze.correctPathColor)
+        self.mazeView.markAsCorrectPath(i,j)
         parentI, parentJ = parent[i][j]
-        maze.tiles[parentI][parentJ].setColor(maze.correctPathColor)
+        self.mazeView.markAsCorrectPath(parentI, parentJ)
 
         Clock.schedule_once(partial(self.__backTrackPath_BFS, [
                             parentI, parentJ], parent), self.speed)
-        
+
     def togglePause(self, *args):
         self.pause = not self.pause
-        
-        maze = self.maze
-        
+
         if self.pause:
-            maze.buttons[2].disabled = True
-            maze.buttons[3].disabled = False
+            self.mazeView.disableButtons[[2]]
+            self.mazeView.enableButtons([3])
         else:
-            maze.buttons[3].disabled = True
-            maze.buttons[2].disabled = False
+            self.mazeView.disableButtons[[3]]
+            self.mazeView.enableButtons([2])
+
+    def toggleChangeMazeStart(self, *args):
+        self.chooseStart = True
+        self.chooseEnd = False
+
+        self.mazeView.disableButtons([4, 5,6])
+
+    def toggleChangeMazeEnd(self, *args):
+        self.chooseStart = False
+        self.chooseEnd = True
+
+        self.mazeView.disableButtons([4, 5,6])
+
+    def changeGoal(self, newGoal):
+        print("change goal")
+        self.chooseEnd = False
+        self.mazeView.mazeModel.setGoalPos(newGoal)
+        self.mazeView._resetColors()
         
-    def toggleChangeMazeStart(self, button):
-        maze = self.maze
-        
-        maze.chooseStart = True
-        maze.chooseEnd = False
-        
-        for i in range(4,7):
-            maze.buttons[i].disabled = True
-        
-    def toggleChangeMazeEnd(self, button):
-        maze = self.maze
-        
-        maze.chooseStart = False
-        maze.chooseEnd = True
-        
-        for i in range(4,7):
-            maze.buttons[i].disabled = True   
-        
-    @staticmethod    
-    def changeGoal(maze, newGoal):   
-        
-        maze.goalPos = newGoal    
-        maze._resetColors()
-        for i in range(4,7):
-            maze.buttons[i].disabled = False
-            
-    @staticmethod
-    def changeStart(maze, newStart):
-        
-        maze.startPos = newStart
-        maze.currentPos = newStart
-        maze.startPos = newStart
-        
-        maze._resetColors()
-        maze._renderPlayer()
-        for i in range(4,7):
-            maze.buttons[i].disabled = False
-            
+        self.mazeView.enableButtons([4, 5, 6])
+
+    def changeStart(self,newStart):
+
+        self.chooseStart = False
+        self.mazeView.mazeModel.setStartPos(newStart)
+        self.mazeView.mazeModel.setCurrentPos(newStart)
+        self.mazeView.mazeModel.setStartPos(newStart)
+
+        self.mazeView._resetColors()
+        self.mazeView.renderPlayer()
+        self.mazeView.enableButtons([4, 5,6])
+
     def changeAlgorithm(self, algorithm, *args):
-        self.currentAlgorithm = algorithm 
-        
+        self.currentAlgorithm = algorithm
+
     def __remove_wall(self, currentCell, neighbour):
-        
-        maze = self.maze
-        
-        # Same row 
+
+        # Same row
         if currentCell[0] == neighbour[0]:
-            wall = 1 # Right or Left Wall to be removed
+            wall = 1  # Right or Left Wall to be removed
             i = currentCell[0] = neighbour[0]
             if currentCell[1] > neighbour[1]:
                 # Left Wall which is -> Right Wall of Neighbour to be removed
@@ -428,10 +383,10 @@ class MazeController:
             else:
                 # Right Wall of currentCell to be removed
                 j = currentCell[1]
-                
+
         # Same Column
         else:
-            wall = 0 # Top or Bottom Wall to be removed
+            wall = 0  # Top or Bottom Wall to be removed
             j = currentCell[1] = neighbour[1]
             if currentCell[0] < neighbour[0]:
                 # Bottom Wall which is -> Top Wall of Neighbour to be removed
@@ -439,30 +394,31 @@ class MazeController:
             else:
                 # Top Wall of CurrentCell to be removed
                 i = currentCell[0]
-                
-        maze.tiles[i][j].setBorders(wall, False)
-        
+
+        self.mazeView.setBorder(i, j, wall, False)
+
     @staticmethod
-    def update_rows_cols(maze, rows, cols, *args):
-        maze.clear_widgets()
+    def update_rows_cols(mazeView, rows, cols, *args):
+
+        mazeView.mazeModel.rows = rows
+        mazeView.mazeModel.cols = cols
+
+        mazeView.mazeModel.setCurrentPos([0, 0])
+        mazeView.mazeModel.setStartPos([0, 0])
+        mazeView.mazeModel.setGoalPos([rows-1, cols-1])
         
-        maze.rows = rows
-        maze.cols = cols
+        mazeView.resetMaze()
+
+    def linkButtons(self, buttons):
+        self.mazeView._buttons = buttons
         
-        maze.currentPos = [0,0]
-        maze.goalPos = [rows-1, cols-1]
+    def __incrementSteps(self):
+        self.steps += 1
+        self.mazeView.updateStepsLabel(f'Steps: {self.steps}')
         
-        maze.tiles = [[None for j in range(maze.cols)] for i in range(maze.rows)]
+    def __resetSteps(self):
+        self.steps = 0
+        self.mazeView.updateStepsLabel(f'Steps: {self.steps}')
         
-        for i in range(maze.rows):
-            for j in range(maze.cols):
-                maze.tiles[i][j] = Tile()
-                maze.add_widget(maze.tiles[i][j])
-                
-        try:
-            for i in range(1,6):
-                maze.buttons[i].disabled = True
-        except:
-            pass
-        
-        maze._render()
+    def getView(self):
+        return self.mazeView

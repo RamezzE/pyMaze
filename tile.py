@@ -3,13 +3,15 @@ from kivy.graphics import Rectangle, Line
 from kivy.graphics.context_instructions import Color
 
 class Tile(Widget):
-    def __init__(self,**kwargs):
+    def __init__(self, onTouch, **kwargs):
         super(Tile, self).__init__(**kwargs)
         
         self.color = (1, 1, 1, 1)
         self.borders = [True, True]
         self.borderColor = (0, 0, 0, 1)
         self.borderWidth = 1
+        
+        self.onTouch = onTouch
         
         self.bind(pos = self.render)
         self.bind(size = self.render)
@@ -21,7 +23,7 @@ class Tile(Widget):
             Rectangle(pos=self.pos, size=self.size)
 
         self.renderBorders()
-        self.parent._renderPlayer()
+        self.parent.renderPlayer()
 
     def renderBorders(self):
         # top border
@@ -85,13 +87,5 @@ class Tile(Widget):
         return [i,j]
     
     def on_touch_down(self, touch):
-        from controllers.maze_controller import MazeController
-        if self.parent.chooseEnd == True:
-            if self.collide_point(*touch.pos):   
-                self.parent.chooseEnd = False
-                MazeController.changeGoal(self.parent, self.getIndex())
-                
-        elif self.parent.chooseStart == True:
-            if self.collide_point(*touch.pos):
-                self.parent.chooseStart = False
-                MazeController.changeStart(self.parent, self.getIndex())
+        self.onTouch(self, touch)
+        

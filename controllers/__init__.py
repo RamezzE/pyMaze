@@ -1,1 +1,1 @@
-# File needed to import the controller into maze.py & mainScreen.py
+# File needed to import the controllers as a package into other files
